@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gran Pic">
+<title>Gran Pic — Dashboard</title>
+<style>
+  :root {
+    --azul: #1a4f7a;
+    --azul-claro: #185FA5;
+    --naranja: #D85A30;
+    --gris-fondo: #f4f4f2;
+    --gris-card: #ffffff;
+    --gris-borde: rgba(0,0,0,0.08);
+    --texto: #1a1a18;
+    --texto-muted: #6b6b68;
+    --texto-light: #9b9b96;
+    --verde: #1D9E75;
+    --rojo: #E24B4A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    background: var(--gris-fondo);
+    color: var(--texto);
+    min-height: 100vh;
+    padding-bottom: 32px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--azul);
+    padding: 52px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-title { font-size: 20px; font-weight: 600; color: white; letter-spacing: -0.3px; }
+  .header-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+  .header-badge {
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: white;
+    font-weight: 500;
+  }
+
+  /* NAV SEMANAS */
+  .nav-bar {
+    background: var(--azul);
+    padding: 0 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-week {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .nav-btn {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border-radius: 20px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+  }
+  .nav-btn:active { background: rgba(255,255,255,0.3); }
+  .nav-label { font-size: 15px; font-weight: 600; color: white; min-width: 80px; text-align: center; }
+  .period-tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 3px;
+  }
+  .period-tab {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.6);
+    padding: 5px 10px;
+    border-radius: 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .period-tab.on {
+    background: white;
+    color: var(--azul);
+  }
+
+  /* CONTENIDO */
+  .content { padding: 16px; }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .kpi-card {
+    background: var(--gris-card);
+    border-radius: 14px;
+    padding: 14px 16px;
+    border: 0.5px solid var(--gris-borde);
+  }
+  .kpi-label { font-size: 11px; color: var(--texto-muted); margin-bottom: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+  .kpi-val { font-size: 24px; font-weight: 600; color: var(--texto); letter-spacing: -0.5px; }
+  .kpi-sub { font-size: 11px; color: var(--texto-light); margin-top: 3px; }
+
+  /* CHART SECTION */
+  .section {
+    background: var(--gris-card);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+    border: 0.5px solid var(--gris-borde);
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+  }
+
+  /* GRÁFICO COMENSALES */
+  .day-chart {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr) 48px;
+    gap: 4px;
+    align-items: end;
+  }
+  .day-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .day-venta { font-size: 8px; color: var(--texto-light); text-align: center; line-height: 1.2; }
+  .day-ticket {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--azul-claro);
+    background: #e8f2fc;
+    border-radius: 8px;
+    padding: 1px 4px;
+  }
+  .day-total { font-size: 12px; font-weight: 600; color: var(--texto); }
+  .day-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .bar { border-radius: 2px; min-height: 2px; width: 100%; }
+  .bar-comida { background: var(--azul-claro); }
+  .bar-cena   { background: var(--naranja); }
+  .day-name { font-size: 10px; color: var(--texto-muted); margin-top: 3px; font-weight: 500; }
+  .total-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding-left: 8px;
+    border-left: 1px solid var(--gris-borde);
+  }
+  .total-big { font-size: 15px; font-weight: 700; color: var(--texto); }
+  .total-label { font-size: 8px; color: var(--texto-light); text-transform: uppercase; letter-spacing: 0.3px; }
+  .total-sub-val { font-size: 11px; font-weight: 600; }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    gap: 14px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--texto-muted);
+  }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+  /* TOP PLATOS */
+  .plato-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--gris-borde);
+    gap: 10px;
+  }
+  .plato-row:last-child { border-bottom: none; }
+  .plato-rank {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--texto-light);
+    min-width: 20px;
+    text-align: center;
+  }
+  .plato-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--texto); }
+  .plato-uds { font-size: 11px; color: var(--texto-muted); min-width: 28px; text-align: right; }
+  .plato-importe { font-size: 13px; font-weight: 600; color: var(--texto); min-width: 52px; text-align: right; }
+  .plato-pct {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--azul-claro);
+    background: #e8f2fc;
+    border-radius: 6px;
+    padding: 2px 6px;
+    min-width: 36px;
+    text-align: center;
+  }
+
+  /* ESTADO */
+  .loading { text-align: center; padding: 40px 20px; font-size: 14px; color: var(--texto-muted); }
+  .error { text-align: center; padding: 24px; font-size: 13px; color: var(--rojo); background: #fff5f5; border-radius: 12px; }
+
+  /* REFRESH */
+  .refresh-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 14px;
+    background: var(--gris-card);
+    border: 0.5px solid var(--gris-borde);
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--azul-claro);
+    cursor: pointer;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">Gran Pic</div>
+    <div class="header-sub">Dashboard operativo</div>
+  </div>
+  <div class="header-badge" id="last-update">Cargando...</div>
+</div>
+
+<div class="nav-bar">
+  <div class="nav-week">
+    <button class="nav-btn" id="prev">‹</button>
+    <span class="nav-label" id="wlabel">...</span>
+    <button class="nav-btn" id="next">›</button>
+  </div>
+  <div class="period-tabs">
+    <button class="period-tab on" data-p="actual">Actual</button>
+    <button class="period-tab" data-p="pasada">Pasada</button>
+    <button class="period-tab" data-p="año">Año ant.</button>
+  </div>
+</div>
+
+<div class="content">
+  <div id="kpis" class="kpi-grid">
+    <div class="kpi-card"><div class="loading">...</div></div>
+    <div class="kpi-card"><div class="loading">...</div></div>
+    <div class="kpi-card"><div class="loading">...</div></div>
+    <div class="kpi-card"><div class="loading">...</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Comensales por día</div>
+    <div id="chart"><div class="loading">Cargando datos del restaurante...</div></div>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--azul-claro)"></span>Comida</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--naranja)"></span>Cena</div>
+      <div class="legend-item" style="color:var(--texto-light)">· ticket medio diario</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Top 5 platos</div>
+    <div id="top5"><div class="loading">Cargando...</div></div>
+  </div>
+
+  <button class="refresh-btn" id="refresh-btn">↻ Actualizar datos</button>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbxl0_5ACr0CevKCHZOkE2zWwdhVtDPGrp7V5TBG2g2UyhFhxo_ULdWesW-iFKE1hpo/exec';
+const DIAS = ['L','M','X','J','V','S','D'];
+
+let rawDiario = [], rawProductos = [];
+let semanas = [], idx = 0, periodo = 'actual';
+
+function fmt(n){ return Math.round(n).toLocaleString('es-ES'); }
+function fmtE(n){ return Math.round(n).toLocaleString('es-ES') + '€'; }
+
+function semKey(f){
+  if(!f) return null;
+  const d = new Date(f.toString().includes('T') ? f : f + 'T12:00:00');
+  if(isNaN(d)) return null;
+  const a = d.getFullYear();
+  const e1 = new Date(a,0,1,12,0,0);
+  const ds = e1.getDay();
+  const fin1 = ds===0?1:8-ds;
+  const diff = Math.floor((d-e1)/86400000);
+  const ns = diff<fin1?1:Math.floor((diff-fin1)/7)+2;
+  return `${a}-${String(ns).padStart(2,'0')}`;
+}
+
+function skOffset(base, p){
+  const i = semanas.indexOf(base);
+  if(p==='actual') return base;
+  if(p==='pasada') return i>0?semanas[i-1]:base;
+  if(p==='año'){
+    const [a,s] = base.split('-');
+    const t = `${parseInt(a)-1}-${s}`;
+    return semanas.find(k=>k===t) || semanas.find(k=>k.startsWith(`${parseInt(a)-1}-`)) || base;
+  }
+  return base;
+}
+
+function diaN(s){
+  const m={lunes:1,martes:2,'miércoles':3,jueves:4,viernes:5,'sábado':6,domingo:7};
+  return m[(s||'').toLowerCase()]||0;
+}
+
+function agruparDiario(sk){
+  const dias={};
+  for(let i=1;i<=7;i++) dias[i]={comida:0,cena:0,ventas:0};
+  rawDiario.forEach(r=>{
+    if(semKey(r.Fecha)!==sk) return;
+    const nd = diaN(r['Día semana']);
+    if(!nd) return;
+    const c = parseFloat(r.Comensales)||0;
+    const v = parseFloat(r['Ventas sin IVA'])||0;
+    dias[nd].ventas += v;
+    const t = (r.Turno||'').toLowerCase();
+    if(t.includes('almuerzo')||t.includes('comida')) dias[nd].comida += c;
+    else if(t.includes('cena')) dias[nd].cena += c;
+  });
+  return dias;
+}
+
+function agruparProductos(sk){
+  const prod = {};
+  let totalVentas = 0;
+  rawProductos.forEach(r=>{
+    if(semKey(r.Fecha)!==sk) return;
+    const nombre = r.Producto || '';
+    if(!nombre) return;
+    const v = parseFloat(r['Total sin IVA'])||0;
+    const q = parseFloat(r.Cantidad)||0;
+    if(!prod[nombre]) prod[nombre]={ventas:0,uds:0};
+    prod[nombre].ventas += v;
+    prod[nombre].uds += q;
+    totalVentas += v;
+  });
+  return { prod, totalVentas };
+}
+
+function renderKPIs(dias){
+  let totC=0,totCe=0,totV=0;
+  for(let i=1;i<=7;i++){totC+=dias[i].comida;totCe+=dias[i].cena;totV+=dias[i].ventas;}
+  const totCom=totC+totCe;
+  const ticket=totCom>0?totV/totCom:0;
+
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi-card">
+      <div class="kpi-label">Ventas semana</div>
+      <div class="kpi-val">${fmtE(totV)}</div>
+      <div class="kpi-sub">sin IVA</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Ticket medio</div>
+      <div class="kpi-val">${fmtE(ticket)}</div>
+      <div class="kpi-sub">${fmt(totCom)} comensales</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Comida</div>
+      <div class="kpi-val" style="color:var(--azul-claro)">${fmt(totC)}</div>
+      <div class="kpi-sub">comensales almuerzo</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Cena</div>
+      <div class="kpi-val" style="color:var(--naranja)">${fmt(totCe)}</div>
+      <div class="kpi-sub">comensales cena</div>
+    </div>`;
+}
+
+function renderChart(dias){
+  const maxT = Math.max(...Object.values(dias).map(d=>d.comida+d.cena),1);
+  const BAR = 90;
+  let totC=0,totCe=0,totV=0;
+  for(let i=1;i<=7;i++){totC+=dias[i].comida;totCe+=dias[i].cena;totV+=dias[i].ventas;}
+
+  let html='<div class="day-chart">';
+  for(let i=1;i<=7;i++){
+    const d=dias[i];
+    const tot=d.comida+d.cena;
+    const hC=tot>0?Math.max(Math.round(d.comida/maxT*BAR),2):0;
+    const hCe=tot>0?Math.max(Math.round(d.cena/maxT*BAR),2):0;
+    const tk=tot>0?Math.round(d.ventas/tot):0;
+    html+=`<div class="day-col">
+      <div class="day-venta">${d.ventas>0?fmtE(d.ventas):''}</div>
+      <div class="day-ticket">${tk>0?tk+'€':'-'}</div>
+      <div class="day-total">${tot||''}</div>
+      <div class="day-bars" style="height:${BAR}px">
+        <div class="bar bar-cena" style="height:${hCe}px" title="Cena: ${d.cena}"></div>
+        <div class="bar bar-comida" style="height:${hC}px" title="Comida: ${d.comida}"></div>
+      </div>
+      <div class="day-name">${DIAS[i-1]}</div>
+    </div>`;
+  }
+  html+=`<div class="total-col">
+    <div class="total-big">${fmt(totC+totCe)}</div>
+    <div class="total-label">total</div>
+    <div style="margin-top:6px">
+      <div class="total-sub-val" style="color:var(--azul-claro)">${fmt(totC)}</div>
+      <div class="total-label">comida</div>
+      <div class="total-sub-val" style="color:var(--naranja);margin-top:4px">${fmt(totCe)}</div>
+      <div class="total-label">cena</div>
+    </div>
+    <div style="font-size:10px;color:var(--texto-light);margin-top:6px;text-align:center">${fmtE(totV)}</div>
+  </div></div>`;
+  document.getElementById('chart').innerHTML=html;
+}
+
+function renderTop5(sk){
+  const {prod, totalVentas} = agruparProductos(sk);
+  const sorted = Object.entries(prod).sort((a,b)=>b[1].ventas-a[1].ventas).slice(0,5);
+
+  if(!sorted.length){
+    document.getElementById('top5').innerHTML='<div class="loading">Sin datos de productos</div>';
+    return;
+  }
+
+  let html='';
+  sorted.forEach(([nombre,d],i)=>{
+    const pct = totalVentas>0?Math.round(d.ventas/totalVentas*100):0;
+    html+=`<div class="plato-row">
+      <span class="plato-rank">#${i+1}</span>
+      <span class="plato-name">${nombre}</span>
+      <span class="plato-uds">${Math.round(d.uds)}</span>
+      <span class="plato-importe">${fmtE(d.ventas)}</span>
+      <span class="plato-pct">${pct}%</span>
+    </div>`;
+  });
+  document.getElementById('top5').innerHTML=html;
+}
+
+function render(){
+  if(!semanas.length) return;
+  const base = semanas[idx];
+  const sk = skOffset(base, periodo);
+  const [a,s] = sk.split('-');
+  document.getElementById('wlabel').textContent=`S${s} · ${a}`;
+
+  const dias = agruparDiario(sk);
+  renderKPIs(dias);
+  renderChart(dias);
+  renderTop5(sk);
+}
+
+async function cargarDatos(){
+  document.getElementById('last-update').textContent='Actualizando...';
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch(`${API}?sheet=LK%20Diario`).then(r=>r.json()),
+      fetch(`${API}?sheet=Detalle%20Productos`).then(r=>r.json())
+    ]);
+    rawDiario = r1;
+    rawProductos = r2;
+
+    const set = new Set();
+    r1.forEach(r=>{ const k=semKey(r.Fecha); if(k) set.add(k); });
+    semanas = Array.from(set).sort();
+
+    const hoy = semKey(new Date().toISOString().slice(0,10));
+    idx = semanas.indexOf(hoy);
+    if(idx<0) idx = semanas.length-1;
+
+    const ahora = new Date();
+    document.getElementById('last-update').textContent=`${ahora.getHours()}:${String(ahora.getMinutes()).padStart(2,'0')}`;
+
+    render();
+  } catch(e) {
+    document.getElementById('chart').innerHTML=`<div class="error">Error conectando con los datos.<br>Comprueba la conexión y vuelve a intentarlo.</div>`;
+    document.getElementById('last-update').textContent='Error';
+  }
+}
+
+document.getElementById('prev').addEventListener('click',()=>{ if(idx>0){idx--;render();} });
+document.getElementById('next').addEventListener('click',()=>{ if(idx<semanas.length-1){idx++;render();} });
+document.getElementById('refresh-btn').addEventListener('click',cargarDatos);
+
+document.querySelectorAll('.period-tab').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.period-tab').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    periodo=b.dataset.p;
+    render();
+  });
+});
+
+cargarDatos();
+</script>
+</body>
+</html>
