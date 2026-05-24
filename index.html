@@ -8,12 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Gran Pic">
 <title>Gran Pic — Dashboard</title>
 <style>
-  :root {
-    --azul:#1a4f7a;--azul-claro:#185FA5;--naranja:#D85A30;
-    --verde:#1D9E75;--rojo:#E24B4A;
-    --gris-fondo:#f4f4f2;--gris-card:#ffffff;--gris-borde:rgba(0,0,0,0.08);
-    --texto:#1a1a18;--texto-muted:#6b6b68;--texto-light:#9b9b96;
-  }
+  :root{--azul:#1a4f7a;--azul-claro:#185FA5;--naranja:#D85A30;--verde:#1D9E75;--rojo:#E24B4A;--gris-fondo:#f4f4f2;--gris-card:#ffffff;--gris-borde:rgba(0,0,0,0.08);--texto:#1a1a18;--texto-muted:#6b6b68;--texto-light:#9b9b96;}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;background:var(--gris-fondo);color:var(--texto);min-height:100vh;padding-bottom:32px;}
   .header{background:var(--azul);padding:52px 20px 16px;display:flex;align-items:center;justify-content:space-between;}
@@ -77,21 +72,32 @@
 
   /* OPERATIVA SEMANAL */
   .sem-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* Tabla con scroll vertical interno y headers sticky */
+  .sem-scroll-vertical{overflow-y:auto;max-height:55vh;-webkit-overflow-scrolling:touch;}
+
   .sem-table{border-collapse:collapse;width:100%;}
-  .sem-table th{font-size:9px;font-weight:600;padding:5px 4px;text-align:right;white-space:nowrap;}
-  .sem-table th.stick{position:sticky;left:0;z-index:2;}
-  .sem-table th.h-per{background:var(--azul);color:white;text-align:center;}
+  .sem-table thead tr th{position:sticky;top:0;z-index:3;}
+  .sem-table thead tr:first-child th{top:0;}
+  .sem-table thead tr:nth-child(2) th{top:22px;} /* altura de la primera fila de headers */
+
+  .sem-table th{font-size:9px;font-weight:600;padding:4px 3px;text-align:right;white-space:nowrap;}
+  .sem-table th.stick{position:sticky;left:0;z-index:4;text-align:center;}
+  .sem-table th.h-per{background:var(--azul);color:white;text-align:left;padding-left:4px;}
   .sem-table th.h-25{background:#2E75B6;color:white;}
   .sem-table th.h-26{background:#1a4f7a;color:white;}
   .sem-table th.h-d{background:#374151;color:white;}
-  .sem-table th.h-group{text-align:center;font-size:10px;padding:4px;border-bottom:1px solid rgba(255,255,255,0.2);}
-  .sem-table td{font-size:11px;padding:5px 4px;text-align:right;border-bottom:0.5px solid var(--gris-borde);white-space:nowrap;}
-  .sem-table td.stick{font-weight:700;font-size:10px;color:var(--texto-muted);text-align:center;background:var(--gris-fondo);position:sticky;left:0;z-index:1;border-right:1px solid var(--gris-borde);}
+  .sem-table th.h-group{text-align:center;font-size:9px;padding:3px;border-bottom:1px solid rgba(255,255,255,0.2);}
+
+  .sem-table td{font-size:11px;padding:4px 3px;text-align:right;border-bottom:0.5px solid var(--gris-borde);white-space:nowrap;}
+  .sem-table td.stick{font-weight:700;font-size:10px;color:var(--texto-muted);text-align:left;background:var(--gris-fondo);position:sticky;left:0;z-index:1;border-right:1px solid var(--gris-borde);padding-left:4px;}
   .sem-table tr.sem-current td{background:#f0f7ff!important;}
   .sem-table tr.sem-current td.stick{background:#dbeafe!important;color:var(--azul)!important;}
   .sem-table tr.total-sem td{font-weight:700;background:#f4f4f2!important;border-top:2px solid var(--gris-borde);}
-  .sem-table tr.total-sem td.stick{background:#e8edf2!important;}
-  .sem-table tr.group-header td{background:rgba(26,79,122,0.08)!important;color:var(--azul)!important;font-weight:700;font-size:10px;text-align:center!important;padding:4px;border-top:1px solid rgba(26,79,122,0.2);}
+  .sem-table tr.total-sem td.stick{background:#e8edf2!important;color:var(--texto)!important;}
+  .sem-table tr.ytd-row td{font-weight:700;background:#f0f7ff!important;border-top:1px solid var(--azul-claro);}
+  .sem-table tr.ytd-row td.stick{background:#dbeafe!important;color:var(--azul)!important;font-size:9px;}
+  .sem-table tr.group-header td{background:rgba(26,79,122,0.08)!important;color:var(--azul)!important;font-weight:700;font-size:10px;text-align:center!important;padding:3px;border-top:1px solid rgba(26,79,122,0.2);}
   .sem-table tr:hover td{background:#f8f9fa;}
   .sem-table tr:hover td.stick{background:#eef2f7!important;}
   .val-25{color:var(--texto-light);}
@@ -100,7 +106,6 @@
   .d-pos{color:var(--verde);font-weight:700;}
   .d-neg{color:var(--rojo);font-weight:700;}
   .d-neu{color:var(--texto-light);}
-  .sem-note{font-size:9px;color:var(--texto-light);font-style:italic;margin-top:2px;}
 </style>
 </head>
 <body>
@@ -147,7 +152,9 @@
     <div class="section">
       <div class="section-title">Detalle semanal — 2025 vs 2026</div>
       <div class="sem-scroll-wrap">
-        <div id="sem-table-container"><div class="loading">Cargando...</div></div>
+        <div class="sem-scroll-vertical">
+          <div id="sem-table-container"><div class="loading">Cargando...</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -187,17 +194,15 @@ let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[];
 let semanas=[],opIdx=0,tvIdx=0;
 let facMes=new Date().getMonth(),facAño=new Date().getFullYear();
 
-// ── FORMATO ──────────────────────────────────────────────────────────────────
 function fmt(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
 function fmtE(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' €';}
 function fmtD(n){const p=parseFloat(n).toFixed(2).split('.');p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');return p.join(',')+' €';}
-function fmtK(n){return (n/1000).toFixed(1).replace('.',',')+' k€';}  // miles €
+function fmtK(n){return Math.round(n/1000)+' k€';}
 function fmtP(n){return (n>=0?'+':'')+Math.round(n*100)+'%';}
-function fmtPint(n){return Math.round(n)+'€';}  // precio sin decimales
+function fmtPint(n){return Math.round(n)+'€';}
+function dcls(v){if(v>0.005) return 'd-pos';if(v<-0.005) return 'd-neg';return 'd-neu';}
+const em=()=>`<span class="val-empty">—</span>`;
 
-function dcls(v){if(v>0.005) return 'd-pos'; if(v<-0.005) return 'd-neg'; return 'd-neu';}
-
-// ── FECHAS ───────────────────────────────────────────────────────────────────
 function semKey(f){
   if(!f) return null;
   const s=f.toString().trim();
@@ -254,7 +259,43 @@ function skOffset(base,p){
   return base;
 }
 
-// ── OPERATIVA SEMANAL ────────────────────────────────────────────────────────
+// ── HEADERS COMPARTIDOS ───────────────────────────────────────────────────────
+function headersTabla(labelCol){
+  return `<thead>
+    <tr>
+      <th class="h-per stick" rowspan="2" style="min-width:52px">${labelCol}</th>
+      <th class="h-25 h-group" colspan="3">2025</th>
+      <th class="h-26 h-group" colspan="3">2026</th>
+      <th class="h-d h-group" colspan="3">Δ '26 vs '25</th>
+    </tr>
+    <tr>
+      <th class="h-25">Comen.</th><th class="h-25">€/Com.</th><th class="h-25">k€</th>
+      <th class="h-26">Comen.</th><th class="h-26">€/Com.</th><th class="h-26">k€</th>
+      <th class="h-d">ΔV%</th><th class="h-d">ΔP%</th><th class="h-d">ΔT%</th>
+    </tr>
+  </thead>`;
+}
+
+function filaData(labelHtml,d25,d26,clsExtra,isStickLeft){
+  const v25=d25?d25.v:0,p25=d25?d25.p:0,t25=d25?d25.t:0;
+  const v26=d26?d26.v:0,p26=d26?d26.p:0,t26=d26?d26.t:0;
+  const dv=v25>0&&v26>0?(v26-v25)/v25:null;
+  const dp=p25>0&&p26>0?(p26-p25)/p25:null;
+  const dt=t25>0&&t26>0?(t26-t25)/t25:null;
+  const dc=(v)=>v!==null?`<span class="${dcls(v)}">${fmtP(v)}</span>`:em();
+  return `<tr class="${clsExtra}">
+    <td class="stick">${labelHtml}</td>
+    <td>${v25>0?`<span class="val-25">${fmt(v25)}</span>`:em()}</td>
+    <td>${p25>0?`<span class="val-25">${fmtPint(p25)}</span>`:em()}</td>
+    <td>${t25>0?`<span class="val-25">${fmtK(t25)}</span>`:em()}</td>
+    <td>${v26>0?`<span class="val-26">${fmt(v26)}</span>`:em()}</td>
+    <td>${p26>0?`<span class="val-26">${fmtPint(p26)}</span>`:em()}</td>
+    <td>${t26>0?`<span class="val-26">${fmtK(t26)}</span>`:em()}</td>
+    <td>${dc(dv)}</td><td>${dc(dp)}</td><td>${dc(dt)}</td>
+  </tr>`;
+}
+
+// ── OPERATIVA SEMANAL ─────────────────────────────────────────────────────────
 function buildSemanalData(){
   const data={};
   rawSemanal.forEach(r=>{
@@ -270,10 +311,19 @@ function buildSemanalData(){
   return data;
 }
 
+function sumarRango(data,desde,hasta,año){
+  let v=0,t=0;
+  for(let s=desde;s<=hasta;s++){
+    if(data[s]&&data[s][año]&&data[s][año].v>0){v+=data[s][año].v;t+=data[s][año].t;}
+  }
+  return v>0?{v,p:t/v,t}:null;
+}
+
 function renderOperativaSemanal(){
   const data=buildSemanalData();
   const semActualStr=semKey(new Date().toISOString().slice(0,10))||'2026-01';
   const semActual=parseInt(semActualStr.split('-')[1]);
+  const semAnterior=semActual-1; // última semana completada
 
   const periodos=[
     {label:'P13',desde:1,hasta:13},
@@ -282,153 +332,73 @@ function renderOperativaSemanal(){
     {label:'P53',desde:40,hasta:53},
   ];
 
-  // ── TABLA DE PERIODOS ──
-  // Determinar rango de comparación para el periodo en curso
-  // Periodo en curso = el que contiene la semana actual
   function getPeriodo(s){return periodos.find(p=>s>=p.desde&&s<=p.hasta);}
   const perActual=getPeriodo(semActual);
 
-  function calcPeriodo(per){
-    // ¿Es el periodo en curso?
+  // ── TABLA PERIODOS ──
+  let htmlPer=`<table class="sem-table">${headersTabla('Periodo')}<tbody>`;
+
+  periodos.forEach(per=>{
     const esCurso=perActual&&per.label===perActual.label;
-    // Si es el periodo en curso: solo semanas completadas (hasta semActual-1)
-    // Si es futuro (todas las semanas del periodo > semActual): sin datos 2026
-    const hastaEfectivo=esCurso?semActual-1:per.hasta;
     const esFuturo=per.desde>semActual;
+    const hastaEfectivo=esCurso?semAnterior:per.hasta;
 
-    let v25=0,t25=0,v26=0,t26=0,semsCont25=0,semsCont26=0;
-    for(let s=per.desde;s<=hastaEfectivo;s++){
-      if(data[s]){
-        if(data[s][2025]&&data[s][2025].v>0){v25+=data[s][2025].v;t25+=data[s][2025].t;semsCont25++;}
-        if(!esFuturo&&data[s][2026]&&data[s][2026].v>0){v26+=data[s][2026].v;t26+=data[s][2026].t;semsCont26++;}
-      }
-    }
-    const p25=v25>0?t25/v25:0,p26=v26>0?t26/v26:0;
-    const dv=v25>0&&v26>0?(v26-v25)/v25:null;
-    const dp=p25>0&&p26>0?(p26-p25)/p25:null;
-    const dt=t25>0&&t26>0?(t26-t25)/t25:null;
-    return {v25,p25,t25,v26,p26,t26,dv,dp,dt,esCurso,esFuturo,hastaEfectivo};
-  }
+    const d25=sumarRango(data,per.desde,hastaEfectivo,2025);
+    const d26=esFuturo?null:sumarRango(data,per.desde,hastaEfectivo,2026);
 
-  // Totales
-  let totV25=0,totT25=0,totV26=0,totT26=0;
-  periodos.forEach(per=>{
-    const d=calcPeriodo(per);
-    totV25+=d.v25;totT25+=d.t25;
-    if(!d.esFuturo){totV26+=d.v26;totT26+=d.t26;}
-  });
-  const totP25=totV25>0?totT25/totV25:0,totP26=totV26>0?totT26/totV26:0;
-  const totDv=totV25>0&&totV26>0?(totV26-totV25)/totV25:null;
-  const totDp=totP25>0&&totP26>0?(totP26-totP25)/totP25:null;
-  const totDt=totT25>0&&totT26>0?(totT26-totT25)/totT25:null;
+    const nota=esCurso
+      ?`<span style="font-size:8px;opacity:0.65;display:block">S${per.desde}-S${semAnterior}</span>`
+      :(esFuturo?`<span style="font-size:8px;opacity:0.45;display:block">pdte</span>`:'');
 
-  const em=(v)=>`<span class="val-empty">—</span>`;
-  const v25c=(v)=>v>0?`<span class="val-25">${fmt(v)}</span>`:em();
-  const p25c=(v)=>v>0?`<span class="val-25">${fmtPint(v)}</span>`:em();
-  const t25c=(v)=>v>0?`<span class="val-25">${fmtK(v)}</span>`:em();
-  const v26c=(v)=>v>0?`<span class="val-26">${fmt(v)}</span>`:em();
-  const p26c=(v)=>v>0?`<span class="val-26">${fmtPint(v)}</span>`:em();
-  const t26c=(v)=>v>0?`<span class="val-26">${fmtK(v)}</span>`:em();
-  const dc=(v)=>v!==null?`<span class="${dcls(v)}">${fmtP(v)}</span>`:em();
-
-  let htmlPer=`<table class="sem-table">
-    <thead>
-      <tr>
-        <th class="h-per stick" rowspan="2" style="min-width:36px">Per.</th>
-        <th class="h-25 h-group" colspan="3">2025</th>
-        <th class="h-26 h-group" colspan="3">2026</th>
-        <th class="h-d h-group" colspan="3">Δ '26 vs '25</th>
-      </tr>
-      <tr>
-        <th class="h-25">V</th><th class="h-25">P</th><th class="h-25">T</th>
-        <th class="h-26">V</th><th class="h-26">P</th><th class="h-26">T</th>
-        <th class="h-d">ΔV</th><th class="h-d">ΔP</th><th class="h-d">ΔT</th>
-      </tr>
-    </thead>
-    <tbody>`;
-
-  periodos.forEach(per=>{
-    const d=calcPeriodo(per);
-    const nota=d.esCurso?` <span style="font-size:8px;opacity:0.7">S${per.desde}-S${semActual-1}</span>`:(d.esFuturo?` <span style="font-size:8px;opacity:0.5">pdte</span>`:'');
-    htmlPer+=`<tr${d.esCurso?' class="sem-current"':''}>
-      <td class="stick">${per.label}${nota}</td>
-      <td>${v25c(d.v25)}</td><td>${p25c(d.p25)}</td><td>${t25c(d.t25)}</td>
-      <td>${d.esFuturo?em():v26c(d.v26)}</td>
-      <td>${d.esFuturo?em():p26c(d.p26)}</td>
-      <td>${d.esFuturo?em():t26c(d.t26)}</td>
-      <td>${dc(d.dv)}</td><td>${dc(d.dp)}</td><td>${dc(d.dt)}</td>
-    </tr>`;
+    htmlPer+=filaData(`${per.label}${nota}`,d25,d26,esCurso?'sem-current':'','stick');
   });
 
-  // Fila total
-  htmlPer+=`<tr class="total-sem">
-    <td class="stick">TOT</td>
-    <td>${v25c(totV25)}</td><td>${p25c(totP25)}</td><td>${t25c(totT25)}</td>
-    <td>${v26c(totV26)}</td><td>${p26c(totP26)}</td><td>${t26c(totT26)}</td>
-    <td>${dc(totDv)}</td><td>${dc(totDp)}</td><td>${dc(totDt)}</td>
-  </tr>`;
+  // Fila YTD comparable — suma S1 hasta semAnterior para ambos años
+  const ytd25=sumarRango(data,1,semAnterior,2025);
+  const ytd26=sumarRango(data,1,semAnterior,2026);
+  htmlPer+=filaData(
+    `YTD - S${semAnterior}<span style="font-size:8px;opacity:0.65;display:block">S1-S${semAnterior}</span>`,
+    ytd25,ytd26,'ytd-row','stick'
+  );
+
+  // Fila Total completo
+  const tot25=sumarRango(data,1,53,2025);
+  const tot26=sumarRango(data,1,semAnterior,2026);
+  htmlPer+=filaData('Total',tot25,tot26,'total-sem','stick');
 
   htmlPer+=`</tbody></table>`;
   document.getElementById('periodos-tabla').innerHTML=htmlPer;
 
   // ── TABLA SEMANAL ──
-  let html=`<table class="sem-table">
-    <thead>
-      <tr>
-        <th class="h-per stick" rowspan="2" style="min-width:36px">Sem</th>
-        <th class="h-25 h-group" colspan="3">2025</th>
-        <th class="h-26 h-group" colspan="3">2026</th>
-        <th class="h-d h-group" colspan="3">Δ '26 vs '25</th>
-      </tr>
-      <tr>
-        <th class="h-25">V</th><th class="h-25">P</th><th class="h-25">T</th>
-        <th class="h-26">V</th><th class="h-26">P</th><th class="h-26">T</th>
-        <th class="h-d">ΔV</th><th class="h-d">ΔP</th><th class="h-d">ΔT</th>
-      </tr>
-    </thead><tbody>`;
+  let html=`<table class="sem-table">${headersTabla('Sem')}<tbody>`;
 
-  let totSV25=0,totST25=0,totSV26=0,totST26=0;
-
+  let totV25=0,totT25=0,totV26=0,totT26=0;
   const periodosDef=[{l:'P13',d:1,h:13},{l:'P26',d:14,h:26},{l:'P39',d:27,h:39},{l:'P53',d:40,h:53}];
+
   periodosDef.forEach(per=>{
-    html+=`<tr class="group-header"><td colspan="10">${per.l} — Semanas ${per.d} a ${per.h}</td></tr>`;
+    html+=`<tr class="group-header"><td colspan="10">${per.l} — S${per.d} a S${per.h}</td></tr>`;
     for(let s=per.d;s<=per.h;s++){
       const d25=data[s]&&data[s][2025]&&data[s][2025].v>0?data[s][2025]:null;
       const d26=data[s]&&data[s][2026]&&data[s][2026].v>0?data[s][2026]:null;
       const isCurrent=s===semActual;
-      const dv=d25&&d26?(d26.v-d25.v)/d25.v:null;
-      const dp=d25&&d26?(d26.p-d25.p)/d25.p:null;
-      const dt=d25&&d26?(d26.t-d25.t)/d25.t:null;
-      if(d25){totSV25+=d25.v;totST25+=d25.t;}
-      if(d26){totSV26+=d26.v;totST26+=d26.t;}
-      html+=`<tr${isCurrent?' class="sem-current"':''}>
-        <td class="stick">S${String(s).padStart(2,'0')}</td>
-        <td>${d25?`<span class="val-25">${fmt(d25.v)}</span>`:em()}</td>
-        <td>${d25?`<span class="val-25">${fmtPint(d25.p)}</span>`:em()}</td>
-        <td>${d25?`<span class="val-25">${fmtK(d25.t)}</span>`:em()}</td>
-        <td>${d26?`<span class="val-26">${fmt(d26.v)}</span>`:em()}</td>
-        <td>${d26?`<span class="val-26">${fmtPint(d26.p)}</span>`:em()}</td>
-        <td>${d26?`<span class="val-26">${fmtK(d26.t)}</span>`:em()}</td>
-        <td>${dc(dv)}</td><td>${dc(dp)}</td><td>${dc(dt)}</td>
-      </tr>`;
+      if(d25){totV25+=d25.v;totT25+=d25.t;}
+      if(d26){totV26+=d26.v;totT26+=d26.t;}
+      html+=filaData(`S${String(s).padStart(2,'0')}`,d25,d26,isCurrent?'sem-current':'','stick');
     }
   });
 
-  const totSP25=totSV25>0?totST25/totSV25:0,totSP26=totSV26>0?totST26/totSV26:0;
-  const tDv=totSV25>0&&totSV26>0?(totSV26-totSV25)/totSV25:null;
-  const tDp=totSP25>0&&totSP26>0?(totSP26-totSP25)/totSP25:null;
-  const tDt=totST25>0&&totST26>0?(totST26-totST25)/totST25:null;
-  html+=`<tr class="total-sem">
-    <td class="stick">TOT</td>
-    <td>${v25c(totSV25)}</td><td>${p25c(totSP25)}</td><td>${t25c(totST25)}</td>
-    <td>${v26c(totSV26)}</td><td>${p26c(totSP26)}</td><td>${t26c(totST26)}</td>
-    <td>${dc(tDv)}</td><td>${dc(tDp)}</td><td>${dc(tDt)}</td>
-  </tr></tbody></table>`;
+  const totP25=totV25>0?totT25/totV25:0,totP26=totV26>0?totT26/totV26:0;
+  html+=filaData('Total',
+    totV25>0?{v:totV25,p:totP25,t:totT25}:null,
+    totV26>0?{v:totV26,p:totP26,t:totT26}:null,
+    'total-sem','stick'
+  );
 
+  html+=`</tbody></table>`;
   document.getElementById('sem-table-container').innerHTML=html;
 }
 
-// ── OPERATIVA DIARIA ─────────────────────────────────────────────────────────
+// ── OPERATIVA DIARIA ──────────────────────────────────────────────────────────
 function agruparDiario(sk){
   const dias={};
   for(let i=1;i<=7;i++) dias[i]={comida:0,cena:0,ventas:0,ticket:0};
