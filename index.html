@@ -9,145 +9,79 @@
 <title>Gran Pic — Dashboard</title>
 <style>
   :root {
-    --azul: #1a4f7a;
-    --azul-claro: #185FA5;
-    --naranja: #D85A30;
-    --verde: #1D9E75;
-    --gris-fondo: #f4f4f2;
-    --gris-card: #ffffff;
-    --gris-borde: rgba(0,0,0,0.08);
-    --texto: #1a1a18;
-    --texto-muted: #6b6b68;
-    --texto-light: #9b9b96;
-    --rojo: #E24B4A;
+    --azul: #1a4f7a; --azul-claro: #185FA5; --naranja: #D85A30;
+    --gris-fondo: #f4f4f2; --gris-card: #ffffff; --gris-borde: rgba(0,0,0,0.08);
+    --texto: #1a1a18; --texto-muted: #6b6b68; --texto-light: #9b9b96; --rojo: #E24B4A;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-    background: var(--gris-fondo); color: var(--texto);
-    min-height: 100vh; padding-bottom: 32px;
-  }
-  .header {
-    background: var(--azul); padding: 52px 20px 16px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; background: var(--gris-fondo); color: var(--texto); min-height: 100vh; padding-bottom: 32px; }
+
+  .header { background: var(--azul); padding: 52px 20px 16px; display: flex; align-items: center; justify-content: space-between; }
   .header-title { font-size: 20px; font-weight: 600; color: white; letter-spacing: -0.3px; }
   .header-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 2px; }
-  .header-badge {
-    background: rgba(255,255,255,0.15); border-radius: 20px;
-    padding: 6px 14px; font-size: 12px; color: white; font-weight: 500;
-  }
-  .nav-bar {
-    background: var(--azul); padding: 0 20px 16px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .nav-week { display: flex; align-items: center; gap: 12px; }
-  .nav-btn {
-    background: rgba(255,255,255,0.15); border: none; border-radius: 20px;
-    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-    color: white; font-size: 18px; cursor: pointer;
-  }
-  .nav-btn:active { background: rgba(255,255,255,0.3); }
-  .nav-label { font-size: 15px; font-weight: 600; color: white; min-width: 80px; text-align: center; }
-  .main-tabs {
-    display: flex; gap: 3px; background: rgba(255,255,255,0.1);
-    border-radius: 20px; padding: 3px;
-  }
-  .main-tab {
-    font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.6);
-    padding: 5px 10px; border-radius: 16px; border: none; background: none; cursor: pointer;
-  }
+  .header-badge { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: white; font-weight: 500; }
+
+  .tabs-bar { background: var(--azul); padding: 0 20px 16px; display: flex; justify-content: center; }
+  .main-tabs { display: flex; gap: 3px; background: rgba(255,255,255,0.1); border-radius: 20px; padding: 3px; }
+  .main-tab { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); padding: 5px 14px; border-radius: 16px; border: none; background: none; cursor: pointer; }
   .main-tab.on { background: white; color: var(--azul); }
+
   .content { padding: 16px; }
   .tab-panel { display: none; }
   .tab-panel.on { display: block; }
-  .section {
-    background: var(--gris-card); border-radius: 16px;
-    padding: 16px; margin-bottom: 14px; border: 0.5px solid var(--gris-borde);
-  }
-  .section-title {
-    font-size: 12px; font-weight: 600; color: var(--texto-muted);
-    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
-  }
-  .day-chart {
-    display: grid; grid-template-columns: repeat(7, 1fr) 56px;
-    gap: 4px; align-items: end;
-  }
+
+  /* SELECTOR DE SEMANA / MES dentro de pestaña */
+  .periodo-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; background: var(--gris-card); border-radius: 14px; padding: 10px 14px; border: 0.5px solid var(--gris-borde); }
+  .periodo-btn { background: var(--gris-fondo); border: 0.5px solid var(--gris-borde); border-radius: 20px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; color: var(--texto); flex-shrink: 0; }
+  .periodo-btn:active { background: var(--azul-claro); color: white; }
+  .periodo-label { font-size: 14px; font-weight: 600; color: var(--texto); flex: 1; text-align: center; }
+
+  .section { background: var(--gris-card); border-radius: 16px; padding: 16px; margin-bottom: 14px; border: 0.5px solid var(--gris-borde); }
+  .section-title { font-size: 12px; font-weight: 600; color: var(--texto-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+
+  .day-chart { display: grid; grid-template-columns: repeat(7, 1fr) 56px; gap: 4px; align-items: end; }
   .day-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .day-venta { font-size: 8px; color: var(--texto-light); text-align: center; line-height: 1.2; }
-  .day-ticket {
-    font-size: 9px; font-weight: 600; color: var(--azul-claro);
-    background: #e8f2fc; border-radius: 8px; padding: 1px 4px;
-  }
+  .day-ticket { font-size: 9px; font-weight: 600; color: var(--azul-claro); background: #e8f2fc; border-radius: 8px; padding: 1px 4px; }
   .day-total { font-size: 12px; font-weight: 600; color: var(--texto); }
   .day-bars { display: flex; flex-direction: column; gap: 1px; width: 100%; justify-content: flex-end; }
   .bar { border-radius: 2px; min-height: 2px; width: 100%; display: flex; align-items: center; justify-content: center; }
   .bar-comida { background: var(--azul-claro); }
-  .bar-cena   { background: var(--naranja); }
+  .bar-cena { background: var(--naranja); }
   .bar-num { font-size: 8px; font-weight: 600; color: white; line-height: 1; }
   .day-name { font-size: 10px; color: var(--texto-muted); margin-top: 3px; font-weight: 600; }
   .day-fecha { font-size: 8px; color: var(--texto-light); margin-top: 1px; }
-  .total-col {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 4px; padding-left: 8px; border-left: 1px solid var(--gris-borde);
-  }
+
+  .total-col { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-left: 8px; border-left: 1px solid var(--gris-borde); }
   .tot-item { display: flex; flex-direction: column; align-items: center; }
   .tot-val { font-size: 13px; font-weight: 700; color: var(--texto); }
   .tot-label { font-size: 8px; color: var(--texto-light); text-transform: uppercase; letter-spacing: 0.3px; text-align: center; }
   .tot-divider { width: 100%; height: 0.5px; background: var(--gris-borde); margin: 2px 0; }
+
   .legend { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
   .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--texto-muted); }
   .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
 
-  /* TABLAS GENERALES */
   .data-table { width: 100%; border-collapse: collapse; }
-  .data-table th {
-    font-size: 10px; font-weight: 600; color: var(--texto-muted);
-    text-transform: uppercase; letter-spacing: 0.3px;
-    padding: 6px 4px; border-bottom: 1px solid var(--gris-borde); text-align: left;
-  }
+  .data-table th { font-size: 10px; font-weight: 600; color: var(--texto-muted); text-transform: uppercase; letter-spacing: 0.3px; padding: 6px 4px; border-bottom: 1px solid var(--gris-borde); text-align: left; }
   .data-table th.r { text-align: right; }
   .data-table td { padding: 8px 4px; border-bottom: 0.5px solid var(--gris-borde); font-size: 12px; vertical-align: middle; }
   .data-table tr:last-child td { border-bottom: none; }
   .data-table td.r { text-align: right; }
   .data-table tr.total-row td { font-weight: 700; color: var(--texto); border-top: 1px solid var(--gris-borde); border-bottom: none; padding-top: 10px; }
 
-  /* BADGES CATEGORÍA */
-  .badge {
-    font-size: 9px; font-weight: 600; border-radius: 6px;
-    padding: 2px 6px; display: inline-block;
-  }
-  .badge-comida  { background: #e8f2fc; color: var(--azul-claro); }
-  .badge-bebida  { background: #fef0e8; color: var(--naranja); }
-  .badge-otros   { background: #f0f0ee; color: var(--texto-muted); }
-
-  /* MES SELECTOR */
-  .mes-nav {
-    display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
-  }
-  .mes-btn {
-    background: var(--gris-fondo); border: 0.5px solid var(--gris-borde);
-    border-radius: 20px; width: 28px; height: 28px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; cursor: pointer; color: var(--texto);
-  }
-  .mes-label { font-size: 14px; font-weight: 600; color: var(--texto); flex: 1; text-align: center; }
+  .badge { font-size: 9px; font-weight: 600; border-radius: 6px; padding: 2px 6px; display: inline-block; }
+  .badge-comida { background: #e8f2fc; color: var(--azul-claro); }
+  .badge-bebida { background: #fef0e8; color: var(--naranja); }
+  .badge-otros { background: #f0f0ee; color: var(--texto-muted); }
 
   .importe { font-weight: 600; color: var(--texto); }
-  .pct-badge {
-    font-size: 10px; font-weight: 600; color: var(--azul-claro);
-    background: #e8f2fc; border-radius: 6px; padding: 2px 6px; display: inline-block;
-  }
+  .pct-badge { font-size: 10px; font-weight: 600; color: var(--azul-claro); background: #e8f2fc; border-radius: 6px; padding: 2px 6px; display: inline-block; }
   .rank { font-size: 10px; font-weight: 700; color: var(--texto-light); }
   .plato-n { font-weight: 500; color: var(--texto); }
   .loading { text-align: center; padding: 30px; font-size: 14px; color: var(--texto-muted); }
   .error { text-align: center; padding: 20px; font-size: 13px; color: var(--rojo); background: #fff5f5; border-radius: 12px; }
-  .refresh-btn {
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    width: 100%; padding: 14px; background: var(--gris-card);
-    border: 0.5px solid var(--gris-borde); border-radius: 14px;
-    font-size: 14px; font-weight: 500; color: var(--azul-claro); cursor: pointer; margin-top: 4px;
-  }
+  .refresh-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; background: var(--gris-card); border: 0.5px solid var(--gris-borde); border-radius: 14px; font-size: 14px; font-weight: 500; color: var(--azul-claro); cursor: pointer; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -160,12 +94,7 @@
   <div class="header-badge" id="last-update">Cargando...</div>
 </div>
 
-<div class="nav-bar">
-  <div class="nav-week">
-    <button class="nav-btn" id="prev">‹</button>
-    <span class="nav-label" id="wlabel">...</span>
-    <button class="nav-btn" id="next">›</button>
-  </div>
+<div class="tabs-bar">
   <div class="main-tabs">
     <button class="main-tab on" data-tab="operativa">Operativa</button>
     <button class="main-tab" data-tab="topventas">Top ventas</button>
@@ -177,24 +106,34 @@
 
   <!-- OPERATIVA -->
   <div class="tab-panel on" id="panel-operativa">
+    <div class="periodo-nav">
+      <button class="periodo-btn" id="op-prev">‹</button>
+      <span class="periodo-label" id="op-label">...</span>
+      <button class="periodo-btn" id="op-next">›</button>
+    </div>
     <div id="chart-actual"></div>
-    <div id="chart-pasada"></div>
+    <div id="chart-anterior"></div>
     <div id="chart-año"></div>
   </div>
 
   <!-- TOP VENTAS -->
   <div class="tab-panel" id="panel-topventas">
+    <div class="periodo-nav">
+      <button class="periodo-btn" id="tv-prev">‹</button>
+      <span class="periodo-label" id="tv-label">...</span>
+      <button class="periodo-btn" id="tv-next">›</button>
+    </div>
     <div id="top-actual"></div>
-    <div id="top-pasada"></div>
+    <div id="top-anterior"></div>
     <div id="top-año"></div>
   </div>
 
   <!-- FACTURAS -->
   <div class="tab-panel" id="panel-facturas">
-    <div class="mes-nav">
-      <button class="mes-btn" id="mes-prev">‹</button>
-      <span class="mes-label" id="mes-label">...</span>
-      <button class="mes-btn" id="mes-next">›</button>
+    <div class="periodo-nav">
+      <button class="periodo-btn" id="fac-prev">‹</button>
+      <span class="periodo-label" id="fac-label">...</span>
+      <button class="periodo-btn" id="fac-next">›</button>
     </div>
     <div id="facturas-resumen"></div>
     <div id="facturas-detalle"></div>
@@ -209,17 +148,13 @@ const DIAS = ['L','M','X','J','V','S','D'];
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 let rawDiario=[], rawProductos=[], rawFacturas=[], rawMaestro=[];
-let semanas=[], idx=0;
-let mesActual = new Date().getMonth(); // 0-11
-let añoActual = new Date().getFullYear();
+let semanas=[];
+let opIdx=0, tvIdx=0; // índices independientes por pestaña
+let facMes=new Date().getMonth(), facAño=new Date().getFullYear();
 
 function fmt(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
 function fmtE(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' €'; }
-function fmtD(n){ // con decimales
-  const partes = parseFloat(n).toFixed(2).split('.');
-  partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');
-  return partes.join(',') + ' €';
-}
+function fmtD(n){ const p=parseFloat(n).toFixed(2).split('.'); p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.'); return p.join(',')+' €'; }
 
 function semKey(f){
   if(!f) return null;
@@ -248,6 +183,13 @@ function fechaDia(sk,numDia){
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
 }
 
+function rangeSemana(sk){
+  const lunes=lunesDeSemana(sk);
+  const domingo=new Date(lunes); domingo.setDate(lunes.getDate()+6);
+  const f=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
+  return `${f(lunes)}-${f(domingo)}`;
+}
+
 function diaN(s){
   const m={lunes:1,martes:2,'miércoles':3,jueves:4,viernes:5,'sábado':6,domingo:7};
   return m[(s||'').toLowerCase().trim()]||0;
@@ -256,7 +198,7 @@ function diaN(s){
 function skOffset(base,p){
   const i=semanas.indexOf(base);
   if(p==='actual') return base;
-  if(p==='pasada') return i>0?semanas[i-1]:base;
+  if(p==='anterior') return i>0?semanas[i-1]:base;
   if(p==='año'){
     const [a,s]=base.split('-');
     const t=`${parseInt(a)-1}-${s}`;
@@ -299,164 +241,35 @@ function agruparProductos(sk){
   return {prod,totalComida};
 }
 
-// Maestro proveedores → mapa nombre:categoría
 function buildMaestro(){
   const map={};
   rawMaestro.forEach(r=>{
-    const nombre=(r['Nomenclatura Gran Pic']||r['Proveedor']||Object.values(r)[0]||'').trim().toLowerCase();
-    const cat=(r['Categoría (600)']||r['Categoria']||Object.values(r)[1]||'').trim().toLowerCase();
-    if(nombre){
-      if(cat==='comida') map[nombre]='Comida';
-      else if(cat==='bebida') map[nombre]='Bebida';
-      else map[nombre]='Otros';
-    }
+    const nombre=(r['Nomenclatura Gran Pic']||'').toString().trim().toLowerCase();
+    const cat=(r['Categoría (600)']||'').toString().trim().toLowerCase();
+    if(!nombre) return;
+    if(cat==='comida') map[nombre]='Comida';
+    else if(cat==='bebida') map[nombre]='Bebida';
+    else map[nombre]='Otros';
   });
   return map;
 }
 
-function getCategoria(proveedor, maestroMap){
-  const k=(proveedor||'').trim().toLowerCase();
-  return maestroMap[k]||'Otros';
+function getCategoria(proveedor,maestroMap){
+  return maestroMap[(proveedor||'').trim().toLowerCase()]||'Otros';
 }
 
 function parseFechaFactura(f){
   if(!f) return null;
   const s=f.toString().trim();
   if(s.includes('T')) return new Date(s);
-  if(s.includes('-')) return new Date(s+'T12:00:00');
+  if(s.match(/^\d{4}-\d{2}-\d{2}$/)) return new Date(s+'T12:00:00');
   if(s.includes('/')) {
     const p=s.split('/');
-    return new Date(`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}T12:00:00`);
+    if(p.length===3) return new Date(`${p[2].length===2?'20'+p[2]:p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}T12:00:00`);
   }
-  // número de serie Excel
   const n=parseFloat(s);
-  if(!isNaN(n)) return new Date((n-25569)*86400000);
+  if(!isNaN(n)&&n>40000) return new Date((n-25569)*86400000);
   return null;
-}
-
-function renderFacturas(){
-  const maestroMap=buildMaestro();
-  const now=new Date();
-  const mes=mesActual, año=añoActual;
-
-  document.getElementById('mes-label').textContent=`${MESES[mes]} ${año}`;
-
-  // Filtrar facturas del mes
-  const facMes=rawFacturas.filter(r=>{
-    const d=parseFechaFactura(r.Fecha||r['Fecha']);
-    if(!d||isNaN(d)) return false;
-    return d.getMonth()===mes && d.getFullYear()===año;
-  });
-
-  // ── TABLA 1: Acumulado por proveedor ──
-  const porProveedor={};
-  facMes.forEach(r=>{
-    const prov=(r.Proveedor||'').trim();
-    const bi=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0;
-    const iva=parseFloat(r['IVA (€)']||r['IVA'])||0;
-    const total=parseFloat(r['Total (€)']||r['Total'])||bi+iva;
-    const cat=getCategoria(prov,maestroMap);
-    if(!porProveedor[prov]) porProveedor[prov]={cat,facturas:0,sinIva:0,conIva:0};
-    porProveedor[prov].facturas++;
-    porProveedor[prov].sinIva+=bi;
-    porProveedor[prov].conIva+=total;
-  });
-
-  // Ordenar: Comida > Bebida > Otros, luego por importe desc
-  const catOrder={Comida:0,Bebida:1,Otros:2};
-  const sorted=Object.entries(porProveedor).sort((a,b)=>{
-    const co=catOrder[a[1].cat]-catOrder[b[1].cat];
-    return co!==0?co:b[1].sinIva-a[1].sinIva;
-  });
-
-  let totFac=0,totSin=0,totCon=0;
-  sorted.forEach(([,d])=>{totFac+=d.facturas;totSin+=d.sinIva;totCon+=d.conIva;});
-
-  const badgeClass={Comida:'badge-comida',Bebida:'badge-bebida',Otros:'badge-otros'};
-
-  let html1=`<div class="section">
-    <div class="section-title">Acumulado por proveedor</div>
-    <table class="data-table">
-      <thead><tr>
-        <th>Proveedor</th>
-        <th class="r">#</th>
-        <th class="r">Sin IVA</th>
-        <th class="r">Con IVA</th>
-      </tr></thead>
-      <tbody>`;
-
-  sorted.forEach(([prov,d])=>{
-    html1+=`<tr>
-      <td><span class="badge ${badgeClass[d.cat]}">${d.cat}</span><br><span style="font-size:12px;font-weight:500">${prov}</span></td>
-      <td class="r">${d.facturas}</td>
-      <td class="r">${fmtD(d.sinIva)}</td>
-      <td class="r">${fmtD(d.conIva)}</td>
-    </tr>`;
-  });
-
-  if(!sorted.length) html1+=`<tr><td colspan="4" style="text-align:center;color:var(--texto-light);padding:20px">Sin facturas este mes</td></tr>`;
-
-  html1+=`<tr class="total-row">
-    <td>Total</td>
-    <td class="r">${totFac}</td>
-    <td class="r">${fmtD(totSin)}</td>
-    <td class="r">${fmtD(totCon)}</td>
-  </tr></tbody></table></div>`;
-
-  document.getElementById('facturas-resumen').innerHTML=html1;
-
-  // ── TABLA 2: Detalle por factura ──
-  const detalle=[...facMes].sort((a,b)=>{
-    const da=parseFechaFactura(a.Fecha||a['Fecha']);
-    const db=parseFechaFactura(b.Fecha||b['Fecha']);
-    return db-da; // más reciente primero
-  });
-
-  let totDetSin=0,totDetCon=0,totDetFac=0;
-  detalle.forEach(r=>{
-    totDetSin+=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0;
-    const iva=parseFloat(r['IVA (€)']||r['IVA'])||0;
-    const bi=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0;
-    totDetCon+=parseFloat(r['Total (€)']||r['Total'])||bi+iva;
-    totDetFac++;
-  });
-
-  let html2=`<div class="section">
-    <div class="section-title">Detalle de facturas</div>
-    <table class="data-table">
-      <thead><tr>
-        <th>Fecha</th>
-        <th>Proveedor</th>
-        <th class="r">Sin IVA</th>
-        <th class="r">Con IVA</th>
-      </tr></thead>
-      <tbody>`;
-
-  detalle.forEach(r=>{
-    const d=parseFechaFactura(r.Fecha||r['Fecha']);
-    const fechaStr=d?`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`:'';
-    const prov=(r.Proveedor||'').trim();
-    const bi=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0;
-    const iva=parseFloat(r['IVA (€)']||r['IVA'])||0;
-    const total=parseFloat(r['Total (€)']||r['Total'])||bi+iva;
-    const cat=getCategoria(prov,maestroMap);
-    html2+=`<tr>
-      <td style="font-size:11px;color:var(--texto-muted)">${fechaStr}</td>
-      <td><span class="badge ${badgeClass[cat]}" style="margin-bottom:2px">${cat}</span><br><span style="font-size:12px;font-weight:500">${prov}</span></td>
-      <td class="r">${fmtD(bi)}</td>
-      <td class="r">${fmtD(total)}</td>
-    </tr>`;
-  });
-
-  if(!detalle.length) html2+=`<tr><td colspan="4" style="text-align:center;color:var(--texto-light);padding:20px">Sin facturas este mes</td></tr>`;
-
-  html2+=`<tr class="total-row">
-    <td colspan="2">Total (${totDetFac} facturas)</td>
-    <td class="r">${fmtD(totDetSin)}</td>
-    <td class="r">${fmtD(totDetCon)}</td>
-  </tr></tbody></table></div>`;
-
-  document.getElementById('facturas-detalle').innerHTML=html2;
 }
 
 function renderGrafico(sk,titulo,containerId){
@@ -507,7 +320,8 @@ function renderTop(sk,titulo,containerId){
   const {prod,totalComida}=agruparProductos(sk);
   const sorted=Object.entries(prod).sort((a,b)=>b[1].ventas-a[1].ventas).slice(0,5);
   const [a,s]=sk.split('-');
-  let html=`<div class="section"><div class="section-title">${titulo} — S${s} · ${a}</div>`;
+  const range=rangeSemana(sk);
+  let html=`<div class="section"><div class="section-title">${titulo} — S${s} · ${a}<br><span style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0">${range}</span></div>`;
   if(!sorted.length){html+='<div class="loading">Sin datos</div></div>';document.getElementById(containerId).innerHTML=html;return;}
   html+=`<table class="data-table"><thead><tr><th>#</th><th>Plato</th><th class="r">Und.</th><th class="r">Ventas</th><th class="r">% comida</th></tr></thead><tbody>`;
   sorted.forEach(([nombre,d],i)=>{
@@ -524,18 +338,100 @@ function renderTop(sk,titulo,containerId){
   document.getElementById(containerId).innerHTML=html;
 }
 
-function render(){
-  if(!semanas.length) return;
+function renderFacturas(){
+  const maestroMap=buildMaestro();
+  document.getElementById('fac-label').textContent=`${MESES[facMes]} ${facAño}`;
+  const facsMes=rawFacturas.filter(r=>{
+    const d=parseFechaFactura(r.Fecha||r['Fecha']);
+    if(!d||isNaN(d)) return false;
+    return d.getMonth()===facMes&&d.getFullYear()===facAño;
+  });
+
+  // Acumulado por proveedor
+  const porProv={};
+  facsMes.forEach(r=>{
+    const prov=(r.Proveedor||'').trim();
+    const bi=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0;
+    const iva=parseFloat(r['IVA (€)']||r['IVA'])||0;
+    const total=parseFloat(r['Total (€)']||r['Total'])||bi+iva;
+    const cat=getCategoria(prov,maestroMap);
+    if(!porProv[prov]) porProv[prov]={cat,facturas:0,sinIva:0,conIva:0};
+    porProv[prov].facturas++; porProv[prov].sinIva+=bi; porProv[prov].conIva+=total;
+  });
+
+  const catOrder={Comida:0,Bebida:1,Otros:2};
+  const sortedProv=Object.entries(porProv).sort((a,b)=>{
+    const co=catOrder[a[1].cat]-catOrder[b[1].cat];
+    return co!==0?co:b[1].sinIva-a[1].sinIva;
+  });
+
+  const badgeClass={Comida:'badge-comida',Bebida:'badge-bebida',Otros:'badge-otros'};
+  let totFac=0,totSin=0,totCon=0;
+  sortedProv.forEach(([,d])=>{totFac+=d.facturas;totSin+=d.sinIva;totCon+=d.conIva;});
+
+  let html1=`<div class="section"><div class="section-title">Acumulado por proveedor</div>
+    <table class="data-table"><thead><tr><th>Proveedor</th><th class="r">#</th><th class="r">Sin IVA</th><th class="r">Con IVA</th></tr></thead><tbody>`;
+  sortedProv.forEach(([prov,d])=>{
+    html1+=`<tr>
+      <td><span class="badge ${badgeClass[d.cat]}">${d.cat}</span><br><span style="font-size:12px;font-weight:500">${prov}</span></td>
+      <td class="r">${d.facturas}</td><td class="r">${fmtD(d.sinIva)}</td><td class="r">${fmtD(d.conIva)}</td>
+    </tr>`;
+  });
+  if(!sortedProv.length) html1+=`<tr><td colspan="4" style="text-align:center;color:var(--texto-light);padding:20px">Sin facturas este mes</td></tr>`;
+  html1+=`<tr class="total-row"><td>Total</td><td class="r">${totFac}</td><td class="r">${fmtD(totSin)}</td><td class="r">${fmtD(totCon)}</td></tr>`;
+  html1+=`</tbody></table></div>`;
+  document.getElementById('facturas-resumen').innerHTML=html1;
+
+  // Detalle por factura
+  const detalle=[...facsMes].sort((a,b)=>{
+    const da=parseFechaFactura(a.Fecha||a['Fecha']), db=parseFechaFactura(b.Fecha||b['Fecha']);
+    return db-da;
+  });
+  let totDS=0,totDC=0;
+  detalle.forEach(r=>{
+    const bi=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0;
+    const iva=parseFloat(r['IVA (€)']||r['IVA'])||0;
+    totDS+=bi; totDC+=parseFloat(r['Total (€)']||r['Total'])||bi+iva;
+  });
+
+  let html2=`<div class="section"><div class="section-title">Detalle de facturas</div>
+    <table class="data-table"><thead><tr><th>Fecha</th><th>Proveedor</th><th class="r">Sin IVA</th><th class="r">Con IVA</th></tr></thead><tbody>`;
+  detalle.forEach(r=>{
+    const d=parseFechaFactura(r.Fecha||r['Fecha']);
+    const fechaStr=d?`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`:'';
+    const prov=(r.Proveedor||'').trim();
+    const bi=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0;
+    const iva=parseFloat(r['IVA (€)']||r['IVA'])||0;
+    const total=parseFloat(r['Total (€)']||r['Total'])||bi+iva;
+    const cat=getCategoria(prov,maestroMap);
+    html2+=`<tr>
+      <td style="font-size:11px;color:var(--texto-muted);white-space:nowrap">${fechaStr}</td>
+      <td><span class="badge ${badgeClass[cat]}">${cat}</span><br><span style="font-size:12px;font-weight:500">${prov}</span></td>
+      <td class="r">${fmtD(bi)}</td><td class="r">${fmtD(total)}</td>
+    </tr>`;
+  });
+  if(!detalle.length) html2+=`<tr><td colspan="4" style="text-align:center;color:var(--texto-light);padding:20px">Sin facturas este mes</td></tr>`;
+  html2+=`<tr class="total-row"><td colspan="2">Total (${detalle.length} facturas)</td><td class="r">${fmtD(totDS)}</td><td class="r">${fmtD(totDC)}</td></tr>`;
+  html2+=`</tbody></table></div>`;
+  document.getElementById('facturas-detalle').innerHTML=html2;
+}
+
+function renderOperativa(idx){
   const base=semanas[idx];
   const [a,s]=base.split('-');
-  document.getElementById('wlabel').textContent=`S${s} · ${a}`;
-  const skA=skOffset(base,'actual'), skP=skOffset(base,'pasada'), skY=skOffset(base,'año');
-  renderGrafico(skA,'Semana actual','chart-actual');
-  renderGrafico(skP,'Semana pasada','chart-pasada');
-  renderGrafico(skY,'Año anterior','chart-año');
-  renderTop(skA,'Semana actual','top-actual');
-  renderTop(skP,'Semana pasada','top-pasada');
-  renderTop(skY,'Año anterior','top-año');
+  document.getElementById('op-label').textContent=`S${s} · ${a}`;
+  renderGrafico(skOffset(base,'actual'),  'Semana actual',    'chart-actual');
+  renderGrafico(skOffset(base,'anterior'),'Semana anterior',  'chart-anterior');
+  renderGrafico(skOffset(base,'año'),     'Año anterior',     'chart-año');
+}
+
+function renderTopVentas(idx){
+  const base=semanas[idx];
+  const [a,s]=base.split('-');
+  document.getElementById('tv-label').textContent=`S${s} · ${a}`;
+  renderTop(skOffset(base,'actual'),  'Semana actual',   'top-actual');
+  renderTop(skOffset(base,'anterior'),'Semana anterior', 'top-anterior');
+  renderTop(skOffset(base,'año'),     'Año anterior',    'top-año');
 }
 
 async function cargarDatos(){
@@ -552,10 +448,12 @@ async function cargarDatos(){
     r1.forEach(r=>{const k=semKey(r.Fecha);if(k) set.add(k);});
     semanas=Array.from(set).sort();
     const hoy=semKey(new Date().toISOString().slice(0,10));
-    idx=semanas.indexOf(hoy); if(idx<0) idx=semanas.length-1;
+    opIdx=semanas.indexOf(hoy); if(opIdx<0) opIdx=semanas.length-1;
+    tvIdx=opIdx;
     const ahora=new Date();
     document.getElementById('last-update').textContent=`${ahora.getHours()}:${String(ahora.getMinutes()).padStart(2,'0')}`;
-    render();
+    renderOperativa(opIdx);
+    renderTopVentas(tvIdx);
     renderFacturas();
   } catch(e){
     document.getElementById('last-update').textContent='Error';
@@ -563,15 +461,19 @@ async function cargarDatos(){
   }
 }
 
-document.getElementById('prev').addEventListener('click',()=>{if(idx>0){idx--;render();}});
-document.getElementById('next').addEventListener('click',()=>{if(idx<semanas.length-1){idx++;render();}});
-document.getElementById('refresh-btn').addEventListener('click',cargarDatos);
-document.getElementById('mes-prev').addEventListener('click',()=>{
-  mesActual--; if(mesActual<0){mesActual=11;añoActual--;} renderFacturas();
-});
-document.getElementById('mes-next').addEventListener('click',()=>{
-  mesActual++; if(mesActual>11){mesActual=0;añoActual++;} renderFacturas();
-});
+// Navegación operativa
+document.getElementById('op-prev').addEventListener('click',()=>{if(opIdx>0){opIdx--;renderOperativa(opIdx);}});
+document.getElementById('op-next').addEventListener('click',()=>{if(opIdx<semanas.length-1){opIdx++;renderOperativa(opIdx);}});
+
+// Navegación top ventas
+document.getElementById('tv-prev').addEventListener('click',()=>{if(tvIdx>0){tvIdx--;renderTopVentas(tvIdx);}});
+document.getElementById('tv-next').addEventListener('click',()=>{if(tvIdx<semanas.length-1){tvIdx++;renderTopVentas(tvIdx);}});
+
+// Navegación facturas
+document.getElementById('fac-prev').addEventListener('click',()=>{facMes--;if(facMes<0){facMes=11;facAño--;}renderFacturas();});
+document.getElementById('fac-next').addEventListener('click',()=>{facMes++;if(facMes>11){facMes=0;facAño++;}renderFacturas();});
+
+// Tabs
 document.querySelectorAll('.main-tab').forEach(b=>{
   b.addEventListener('click',()=>{
     document.querySelectorAll('.main-tab').forEach(x=>x.classList.remove('on'));
@@ -581,6 +483,7 @@ document.querySelectorAll('.main-tab').forEach(b=>{
   });
 });
 
+document.getElementById('refresh-btn').addEventListener('click',cargarDatos);
 cargarDatos();
 </script>
 </body>
