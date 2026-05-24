@@ -229,7 +229,16 @@ function skOffset(base, p){
   if(p==='año'){
     const [a,s] = base.split('-');
     const t = `${parseInt(a)-1}-${s}`;
-    return semanas.find(k=>k===t) || semanas.find(k=>k.startsWith(`${parseInt(a)-1}-`)) || base;
+    const exacta = semanas.find(k=>k===t);
+    if(exacta) return exacta;
+    // Si no existe exacta, busca la semana más cercana del año anterior
+    const añoAnterior = semanas.filter(k=>k.startsWith(`${parseInt(a)-1}-`));
+    if(!añoAnterior.length) return base;
+    // Ordena por proximidad al número de semana
+    const numSem = parseInt(s);
+    return añoAnterior.sort((a,b)=>
+      Math.abs(parseInt(a.split('-')[1])-numSem) - Math.abs(parseInt(b.split('-')[1])-numSem)
+    )[0];
   }
   return base;
 }
