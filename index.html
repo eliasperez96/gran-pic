@@ -10,8 +10,9 @@
 <style>
   :root {
     --azul: #1a4f7a; --azul-claro: #185FA5; --naranja: #D85A30;
+    --verde: #1D9E75; --rojo: #E24B4A;
     --gris-fondo: #f4f4f2; --gris-card: #ffffff; --gris-borde: rgba(0,0,0,0.08);
-    --texto: #1a1a18; --texto-muted: #6b6b68; --texto-light: #9b9b96; --rojo: #E24B4A;
+    --texto: #1a1a18; --texto-muted: #6b6b68; --texto-light: #9b9b96;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; background: var(--gris-fondo); color: var(--texto); min-height: 100vh; padding-bottom: 32px; }
@@ -22,15 +23,14 @@
   .header-badge { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: white; font-weight: 500; }
 
   .tabs-bar { background: var(--azul); padding: 0 20px 16px; display: flex; justify-content: center; }
-  .main-tabs { display: flex; gap: 3px; background: rgba(255,255,255,0.1); border-radius: 20px; padding: 3px; }
-  .main-tab { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); padding: 5px 14px; border-radius: 16px; border: none; background: none; cursor: pointer; }
+  .main-tabs { display: flex; gap: 3px; background: rgba(255,255,255,0.1); border-radius: 20px; padding: 3px; flex-wrap: wrap; justify-content: center; }
+  .main-tab { font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.6); padding: 5px 10px; border-radius: 16px; border: none; background: none; cursor: pointer; white-space: nowrap; }
   .main-tab.on { background: white; color: var(--azul); }
 
   .content { padding: 16px; }
   .tab-panel { display: none; }
   .tab-panel.on { display: block; }
 
-  /* SELECTOR DE SEMANA / MES dentro de pestaña */
   .periodo-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; background: var(--gris-card); border-radius: 14px; padding: 10px 14px; border: 0.5px solid var(--gris-borde); }
   .periodo-btn { background: var(--gris-fondo); border: 0.5px solid var(--gris-borde); border-radius: 20px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; color: var(--texto); flex-shrink: 0; }
   .periodo-btn:active { background: var(--azul-claro); color: white; }
@@ -39,6 +39,7 @@
   .section { background: var(--gris-card); border-radius: 16px; padding: 16px; margin-bottom: 14px; border: 0.5px solid var(--gris-borde); }
   .section-title { font-size: 12px; font-weight: 600; color: var(--texto-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
 
+  /* GRÁFICO BARRAS */
   .day-chart { display: grid; grid-template-columns: repeat(7, 1fr) 56px; gap: 4px; align-items: end; }
   .day-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .day-venta { font-size: 8px; color: var(--texto-light); text-align: center; line-height: 1.2; }
@@ -51,30 +52,28 @@
   .bar-num { font-size: 8px; font-weight: 600; color: white; line-height: 1; }
   .day-name { font-size: 10px; color: var(--texto-muted); margin-top: 3px; font-weight: 600; }
   .day-fecha { font-size: 8px; color: var(--texto-light); margin-top: 1px; }
-
   .total-col { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-left: 8px; border-left: 1px solid var(--gris-borde); }
   .tot-item { display: flex; flex-direction: column; align-items: center; }
   .tot-val { font-size: 13px; font-weight: 700; color: var(--texto); }
   .tot-label { font-size: 8px; color: var(--texto-light); text-transform: uppercase; letter-spacing: 0.3px; text-align: center; }
   .tot-divider { width: 100%; height: 0.5px; background: var(--gris-borde); margin: 2px 0; }
-
   .legend { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
   .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--texto-muted); }
   .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
 
+  /* TABLAS */
   .data-table { width: 100%; border-collapse: collapse; }
   .data-table th { font-size: 10px; font-weight: 600; color: var(--texto-muted); text-transform: uppercase; letter-spacing: 0.3px; padding: 6px 4px; border-bottom: 1px solid var(--gris-borde); text-align: left; }
   .data-table th.r { text-align: right; }
   .data-table td { padding: 8px 4px; border-bottom: 0.5px solid var(--gris-borde); font-size: 12px; vertical-align: middle; }
   .data-table tr:last-child td { border-bottom: none; }
   .data-table td.r { text-align: right; }
-  .data-table tr.total-row td { font-weight: 700; color: var(--texto); border-top: 1px solid var(--gris-borde); border-bottom: none; padding-top: 10px; }
+  .data-table tr.total-row td { font-weight: 700; border-top: 1px solid var(--gris-borde); border-bottom: none; padding-top: 10px; }
 
   .badge { font-size: 9px; font-weight: 600; border-radius: 6px; padding: 2px 6px; display: inline-block; }
   .badge-comida { background: #e8f2fc; color: var(--azul-claro); }
   .badge-bebida { background: #fef0e8; color: var(--naranja); }
   .badge-otros { background: #f0f0ee; color: var(--texto-muted); }
-
   .importe { font-weight: 600; color: var(--texto); }
   .pct-badge { font-size: 10px; font-weight: 600; color: var(--azul-claro); background: #e8f2fc; border-radius: 6px; padding: 2px 6px; display: inline-block; }
   .rank { font-size: 10px; font-weight: 700; color: var(--texto-light); }
@@ -82,6 +81,45 @@
   .loading { text-align: center; padding: 30px; font-size: 14px; color: var(--texto-muted); }
   .error { text-align: center; padding: 20px; font-size: 13px; color: var(--rojo); background: #fff5f5; border-radius: 12px; }
   .refresh-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 14px; background: var(--gris-card); border: 0.5px solid var(--gris-borde); border-radius: 14px; font-size: 14px; font-weight: 500; color: var(--azul-claro); cursor: pointer; margin-top: 4px; }
+
+  /* OPERATIVA SEMANAL */
+  .periodos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .periodo-card { background: var(--gris-card); border-radius: 14px; padding: 12px; border: 0.5px solid var(--gris-borde); }
+  .pc-title { font-size: 11px; font-weight: 700; color: var(--azul); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; border-bottom: 2px solid var(--azul); padding-bottom: 4px; }
+  .pc-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 0.5px solid var(--gris-borde); }
+  .pc-row:last-child { border-bottom: none; }
+  .pc-label { font-size: 10px; color: var(--texto-muted); font-weight: 500; }
+  .pc-vals { display: flex; gap: 6px; align-items: center; }
+  .pc-v25 { font-size: 11px; color: var(--texto-light); }
+  .pc-v26 { font-size: 12px; font-weight: 600; color: var(--texto); }
+  .pc-delta { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 5px; }
+  .delta-pos { background: #e8f8f2; color: var(--verde); }
+  .delta-neg { background: #fef0f0; color: var(--rojo); }
+  .delta-neu { background: var(--gris-fondo); color: var(--texto-light); }
+
+  /* TABLA SEMANAL */
+  .sem-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; }
+  .sem-table { border-collapse: collapse; min-width: 600px; width: 100%; }
+  .sem-table th { font-size: 9px; font-weight: 600; color: white; padding: 6px 5px; text-align: right; white-space: nowrap; position: sticky; top: 0; z-index: 1; }
+  .sem-table th:first-child { text-align: center; background: var(--azul) !important; position: sticky; left: 0; z-index: 2; }
+  .sem-table th.h25 { background: #2E75B6; }
+  .sem-table th.h26 { background: #1a4f7a; }
+  .sem-table th.hdelta { background: #374151; }
+  .sem-table td { font-size: 11px; padding: 6px 5px; text-align: right; border-bottom: 0.5px solid var(--gris-borde); white-space: nowrap; }
+  .sem-table td:first-child { font-weight: 700; font-size: 10px; color: var(--texto-muted); text-align: center; background: var(--gris-fondo); position: sticky; left: 0; z-index: 1; border-right: 1px solid var(--gris-borde); }
+  .sem-table tr.sem-current td { background: #f0f7ff !important; }
+  .sem-table tr.sem-current td:first-child { background: #dbeafe !important; color: var(--azul) !important; }
+  .sem-table tr.total-sem td { font-weight: 700; background: var(--gris-fondo) !important; border-top: 2px solid var(--gris-borde); font-size: 11px; }
+  .sem-table tr.total-sem td:first-child { background: #e8edf2 !important; }
+  .val-25 { color: var(--texto-light); }
+  .val-26 { color: var(--texto); font-weight: 600; }
+  .val-empty { color: var(--texto-light); opacity: 0.4; }
+  .d-pos { color: var(--verde); font-weight: 700; }
+  .d-neg { color: var(--rojo); font-weight: 700; }
+  .d-neu { color: var(--texto-light); }
+  .sem-table tr:hover td { background: #f8f9fa; }
+  .sem-table tr:hover td:first-child { background: #eef2f7 !important; }
+  .group-header td { background: var(--azul) !important; color: white !important; font-size: 10px; font-weight: 700; text-align: center !important; padding: 4px; }
 </style>
 </head>
 <body>
@@ -96,7 +134,8 @@
 
 <div class="tabs-bar">
   <div class="main-tabs">
-    <button class="main-tab on" data-tab="operativa">Operativa</button>
+    <button class="main-tab on" data-tab="op-diaria">Op. Diaria</button>
+    <button class="main-tab" data-tab="op-semanal">Op. Semanal</button>
     <button class="main-tab" data-tab="topventas">Top ventas</button>
     <button class="main-tab" data-tab="facturas">Facturas</button>
   </div>
@@ -104,8 +143,8 @@
 
 <div class="content">
 
-  <!-- OPERATIVA -->
-  <div class="tab-panel on" id="panel-operativa">
+  <!-- OPERATIVA DIARIA -->
+  <div class="tab-panel on" id="panel-op-diaria">
     <div class="periodo-nav">
       <button class="periodo-btn" id="op-prev">‹</button>
       <span class="periodo-label" id="op-label">...</span>
@@ -114,6 +153,17 @@
     <div id="chart-actual"></div>
     <div id="chart-anterior"></div>
     <div id="chart-año"></div>
+  </div>
+
+  <!-- OPERATIVA SEMANAL -->
+  <div class="tab-panel" id="panel-op-semanal">
+    <div id="periodos-cards"></div>
+    <div class="section">
+      <div class="section-title">Detalle semanal — 2025 vs 2026</div>
+      <div class="sem-scroll-wrap">
+        <div id="sem-table-container"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
   </div>
 
   <!-- TOP VENTAS -->
@@ -147,14 +197,17 @@ const API = 'https://script.google.com/macros/s/AKfycbxl0_5ACr0CevKCHZOkE2zWwdhV
 const DIAS = ['L','M','X','J','V','S','D'];
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-let rawDiario=[], rawProductos=[], rawFacturas=[], rawMaestro=[];
-let semanas=[];
-let opIdx=0, tvIdx=0; // índices independientes por pestaña
+let rawDiario=[], rawProductos=[], rawFacturas=[], rawMaestro=[], rawSemanal=[];
+let semanas=[], opIdx=0, tvIdx=0;
 let facMes=new Date().getMonth(), facAño=new Date().getFullYear();
 
 function fmt(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
 function fmtE(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' €'; }
 function fmtD(n){ const p=parseFloat(n).toFixed(2).split('.'); p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.'); return p.join(',')+' €'; }
+function fmtP(n){ return (n>=0?'+':'')+Math.round(n*100)+'%'; }
+function fmtT(n){ return parseFloat(n).toFixed(1).replace('.',','); }
+
+function deltaClass(v){ if(v>0.001) return 'd-pos'; if(v<-0.001) return 'd-neg'; return 'd-neu'; }
 
 function semKey(f){
   if(!f) return null;
@@ -212,6 +265,156 @@ function skOffset(base,p){
   return base;
 }
 
+// ─── OPERATIVA SEMANAL ───────────────────────────────────────────────────────
+
+function buildSemanalData(){
+  // Construir mapa semana → {v,p,t} por año desde LK Semanal
+  const data={};
+  rawSemanal.forEach(r=>{
+    const año=parseInt(r['Año']||r.Año)||0;
+    const sem=parseInt(r['Semana']||r.Semana)||0;
+    if(!año||!sem) return;
+    const v=parseFloat(r['Comensales totales']||r.Comensales)||0;
+    const t=parseFloat(r['Ventas sin IVA']||r.Ventas)||0;
+    const p=v>0?t/v:0;
+    if(!data[sem]) data[sem]={};
+    data[sem][año]={v,p,t};
+  });
+  return data;
+}
+
+function renderOperativaSemanal(){
+  const data=buildSemanalData();
+  const semActual=parseInt((semKey(new Date().toISOString().slice(0,10))||'2026-01').split('-')[1]);
+
+  // Calcular periodos
+  const periodos=[
+    {label:'P13', desde:1,  hasta:13},
+    {label:'P26', desde:14, hasta:26},
+    {label:'P39', desde:27, hasta:39},
+    {label:'P53', desde:40, hasta:53},
+  ];
+
+  // Cards de periodos
+  let htmlCards='<div class="periodos-grid">';
+  periodos.forEach(p=>{
+    let v25=0,t25=0,v26=0,t26=0;
+    for(let s=p.desde;s<=p.hasta;s++){
+      if(data[s]){
+        if(data[s][2025]){v25+=data[s][2025].v;t25+=data[s][2025].t;}
+        if(data[s][2026]){v26+=data[s][2026].v;t26+=data[s][2026].t;}
+      }
+    }
+    const p25=v25>0?t25/v25:0, p26=v26>0?t26/v26:0;
+    const dv=v25>0?(v26-v25)/v25:null;
+    const dp=p25>0?(p26-p25)/p25:null;
+    const dt=t25>0?(t26-t25)/t25:null;
+
+    const deltaHtml=(val,label)=>{
+      if(val===null) return `<div class="pc-row"><span class="pc-label">${label}</span><span class="d-neu">—</span></div>`;
+      const cls=deltaClass(val);
+      return `<div class="pc-row">
+        <span class="pc-label">${label}</span>
+        <div class="pc-vals">
+          <span class="pc-v25">${label==='V'?fmt(v25):(label==='P'?fmtT(p25)+'€':fmtE(t25))}</span>
+          <span class="pc-v26">${label==='V'?fmt(v26):(label==='P'?fmtT(p26)+'€':fmtE(t26))}</span>
+          <span class="pc-delta ${cls}">${fmtP(val)}</span>
+        </div>
+      </div>`;
+    };
+
+    htmlCards+=`<div class="periodo-card">
+      <div class="pc-title">${p.label} <span style="font-size:9px;font-weight:400;color:var(--texto-light)">S${p.desde}-S${p.hasta}</span></div>
+      ${deltaHtml(dv,'V')}
+      ${deltaHtml(dp,'P')}
+      ${deltaHtml(dt,'T')}
+    </div>`;
+  });
+  htmlCards+='</div>';
+  document.getElementById('periodos-cards').innerHTML=htmlCards;
+
+  // Tabla semanal
+  let html=`<table class="sem-table">
+    <thead><tr>
+      <th style="min-width:36px">Sem</th>
+      <th class="h25">V 25</th>
+      <th class="h25">P 25</th>
+      <th class="h25">T 25</th>
+      <th class="h26">V 26</th>
+      <th class="h26">P 26</th>
+      <th class="h26">T 26</th>
+      <th class="hdelta">ΔV%</th>
+      <th class="hdelta">ΔP%</th>
+      <th class="hdelta">ΔT%</th>
+    </tr></thead><tbody>`;
+
+  // Totales acumulados
+  let totV25=0,totT25=0,totV26=0,totT26=0;
+
+  // Semanas agrupadas por periodo
+  const periodosDef=[{l:'P13',d:1,h:13},{l:'P26',d:14,h:26},{l:'P39',d:27,h:39},{l:'P53',d:40,h:53}];
+  periodosDef.forEach(per=>{
+    // Cabecera de grupo
+    html+=`<tr class="group-header"><td colspan="10">${per.l} — Semanas ${per.d} a ${per.h}</td></tr>`;
+
+    for(let s=per.d;s<=per.h;s++){
+      const d25=data[s]&&data[s][2025]?data[s][2025]:null;
+      const d26=data[s]&&data[s][2026]?data[s][2026]:null;
+      const isCurrent=s===semActual;
+
+      const v25=d25?d25.v:null, p25=d25?d25.p:null, t25=d25?d25.t:null;
+      const v26=d26&&d26.v>0?d26.v:null, p26=d26&&d26.v>0?d26.p:null, t26=d26&&d26.v>0?d26.t:null;
+
+      if(v25) { totV25+=v25; totT25+=t25||0; }
+      if(v26) { totV26+=v26; totT26+=t26||0; }
+
+      const dv=v25&&v26?(v26-v25)/v25:null;
+      const dp=p25&&p26?(p26-p25)/p25:null;
+      const dt=t25&&t26?(t26-t25)/t25:null;
+
+      const c25=(v)=>v!==null?`<span class="val-25">${typeof v==='number'&&v%1!==0?fmtT(v)+'€':fmt(v)}</span>`:`<span class="val-empty">—</span>`;
+      const c26=(v)=>v!==null?`<span class="val-26">${typeof v==='number'&&v%1!==0?fmtT(v)+'€':fmt(v)}</span>`:`<span class="val-empty">—</span>`;
+      const cd=(v)=>v!==null?`<span class="${deltaClass(v)}">${fmtP(v)}</span>`:`<span class="val-empty">—</span>`;
+
+      html+=`<tr${isCurrent?' class="sem-current"':''}>
+        <td>S${String(s).padStart(2,'0')}</td>
+        <td>${v25!==null?`<span class="val-25">${fmt(v25)}</span>`:'<span class="val-empty">—</span>'}</td>
+        <td>${p25!==null?`<span class="val-25">${fmtT(p25)}€</span>`:'<span class="val-empty">—</span>'}</td>
+        <td>${t25!==null?`<span class="val-25">${fmtE(t25)}</span>`:'<span class="val-empty">—</span>'}</td>
+        <td>${v26!==null?`<span class="val-26">${fmt(v26)}</span>`:'<span class="val-empty">—</span>'}</td>
+        <td>${p26!==null?`<span class="val-26">${fmtT(p26)}€</span>`:'<span class="val-empty">—</span>'}</td>
+        <td>${t26!==null?`<span class="val-26">${fmtE(t26)}</span>`:'<span class="val-empty">—</span>'}</td>
+        <td>${cd(dv)}</td>
+        <td>${cd(dp)}</td>
+        <td>${cd(dt)}</td>
+      </tr>`;
+    }
+  });
+
+  // Fila total
+  const totP25=totV25>0?totT25/totV25:0, totP26=totV26>0?totT26/totV26:0;
+  const dtv=totV25>0?(totV26-totV25)/totV25:null;
+  const dtp=totP25>0?(totP26-totP25)/totP25:null;
+  const dtt=totT25>0?(totT26-totT25)/totT25:null;
+  html+=`<tr class="total-sem">
+    <td>TOT</td>
+    <td><span class="val-25">${fmt(totV25)}</span></td>
+    <td><span class="val-25">${fmtT(totP25)}€</span></td>
+    <td><span class="val-25">${fmtE(totT25)}</span></td>
+    <td><span class="val-26">${fmt(totV26)}</span></td>
+    <td><span class="val-26">${fmtT(totP26)}€</span></td>
+    <td><span class="val-26">${fmtE(totT26)}</span></td>
+    <td>${dtv!==null?`<span class="${deltaClass(dtv)}">${fmtP(dtv)}</span>`:'—'}</td>
+    <td>${dtp!==null?`<span class="${deltaClass(dtp)}">${fmtP(dtp)}</span>`:'—'}</td>
+    <td>${dtt!==null?`<span class="${deltaClass(dtt)}">${fmtP(dtt)}</span>`:'—'}</td>
+  </tr>`;
+
+  html+=`</tbody></table>`;
+  document.getElementById('sem-table-container').innerHTML=html;
+}
+
+// ─── OPERATIVA DIARIA ────────────────────────────────────────────────────────
+
 function agruparDiario(sk){
   const dias={};
   for(let i=1;i<=7;i++) dias[i]={comida:0,cena:0,ventas:0,ticket:0};
@@ -254,21 +457,15 @@ function buildMaestro(){
   return map;
 }
 
-function getCategoria(proveedor,maestroMap){
-  return maestroMap[(proveedor||'').trim().toLowerCase()]||'Otros';
-}
+function getCategoria(proveedor,map){ return map[(proveedor||'').trim().toLowerCase()]||'Otros'; }
 
 function parseFechaFactura(f){
   if(!f) return null;
   const s=f.toString().trim();
   if(s.includes('T')) return new Date(s);
   if(s.match(/^\d{4}-\d{2}-\d{2}$/)) return new Date(s+'T12:00:00');
-  if(s.includes('/')) {
-    const p=s.split('/');
-    if(p.length===3) return new Date(`${p[2].length===2?'20'+p[2]:p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}T12:00:00`);
-  }
-  const n=parseFloat(s);
-  if(!isNaN(n)&&n>40000) return new Date((n-25569)*86400000);
+  if(s.includes('/')){const p=s.split('/');if(p.length===3) return new Date(`${p[2].length===2?'20'+p[2]:p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}T12:00:00`);}
+  const n=parseFloat(s); if(!isNaN(n)&&n>40000) return new Date((n-25569)*86400000);
   return null;
 }
 
@@ -326,13 +523,7 @@ function renderTop(sk,titulo,containerId){
   html+=`<table class="data-table"><thead><tr><th>#</th><th>Plato</th><th class="r">Und.</th><th class="r">Ventas</th><th class="r">% comida</th></tr></thead><tbody>`;
   sorted.forEach(([nombre,d],i)=>{
     const pct=totalComida>0?Math.round(d.ventas/totalComida*100):0;
-    html+=`<tr>
-      <td><span class="rank">#${i+1}</span></td>
-      <td><span class="plato-n">${nombre}</span></td>
-      <td class="r">${Math.round(d.uds)}</td>
-      <td class="r"><span class="importe">${fmtE(d.ventas)}</span></td>
-      <td class="r"><span class="pct-badge">${pct}%</span></td>
-    </tr>`;
+    html+=`<tr><td><span class="rank">#${i+1}</span></td><td><span class="plato-n">${nombre}</span></td><td class="r">${Math.round(d.uds)}</td><td class="r"><span class="importe">${fmtE(d.ventas)}</span></td><td class="r"><span class="pct-badge">${pct}%</span></td></tr>`;
   });
   html+=`</tbody></table></div>`;
   document.getElementById(containerId).innerHTML=html;
@@ -343,11 +534,8 @@ function renderFacturas(){
   document.getElementById('fac-label').textContent=`${MESES[facMes]} ${facAño}`;
   const facsMes=rawFacturas.filter(r=>{
     const d=parseFechaFactura(r.Fecha||r['Fecha']);
-    if(!d||isNaN(d)) return false;
-    return d.getMonth()===facMes&&d.getFullYear()===facAño;
+    return d&&!isNaN(d)&&d.getMonth()===facMes&&d.getFullYear()===facAño;
   });
-
-  // Acumulado por proveedor
   const porProv={};
   facsMes.forEach(r=>{
     const prov=(r.Proveedor||'').trim();
@@ -358,92 +546,64 @@ function renderFacturas(){
     if(!porProv[prov]) porProv[prov]={cat,facturas:0,sinIva:0,conIva:0};
     porProv[prov].facturas++; porProv[prov].sinIva+=bi; porProv[prov].conIva+=total;
   });
-
   const catOrder={Comida:0,Bebida:1,Otros:2};
-  const sortedProv=Object.entries(porProv).sort((a,b)=>{
-    const co=catOrder[a[1].cat]-catOrder[b[1].cat];
-    return co!==0?co:b[1].sinIva-a[1].sinIva;
-  });
-
+  const sortedProv=Object.entries(porProv).sort((a,b)=>{const co=catOrder[a[1].cat]-catOrder[b[1].cat];return co!==0?co:b[1].sinIva-a[1].sinIva;});
   const badgeClass={Comida:'badge-comida',Bebida:'badge-bebida',Otros:'badge-otros'};
   let totFac=0,totSin=0,totCon=0;
   sortedProv.forEach(([,d])=>{totFac+=d.facturas;totSin+=d.sinIva;totCon+=d.conIva;});
-
-  let html1=`<div class="section"><div class="section-title">Acumulado por proveedor</div>
-    <table class="data-table"><thead><tr><th>Proveedor</th><th class="r">#</th><th class="r">Sin IVA</th><th class="r">Con IVA</th></tr></thead><tbody>`;
+  let html1=`<div class="section"><div class="section-title">Acumulado por proveedor</div><table class="data-table"><thead><tr><th>Proveedor</th><th class="r">#</th><th class="r">Sin IVA</th><th class="r">Con IVA</th></tr></thead><tbody>`;
   sortedProv.forEach(([prov,d])=>{
-    html1+=`<tr>
-      <td><span class="badge ${badgeClass[d.cat]}">${d.cat}</span><br><span style="font-size:12px;font-weight:500">${prov}</span></td>
-      <td class="r">${d.facturas}</td><td class="r">${fmtD(d.sinIva)}</td><td class="r">${fmtD(d.conIva)}</td>
-    </tr>`;
+    html1+=`<tr><td><span class="badge ${badgeClass[d.cat]}">${d.cat}</span><br><span style="font-size:12px;font-weight:500">${prov}</span></td><td class="r">${d.facturas}</td><td class="r">${fmtD(d.sinIva)}</td><td class="r">${fmtD(d.conIva)}</td></tr>`;
   });
   if(!sortedProv.length) html1+=`<tr><td colspan="4" style="text-align:center;color:var(--texto-light);padding:20px">Sin facturas este mes</td></tr>`;
-  html1+=`<tr class="total-row"><td>Total</td><td class="r">${totFac}</td><td class="r">${fmtD(totSin)}</td><td class="r">${fmtD(totCon)}</td></tr>`;
-  html1+=`</tbody></table></div>`;
+  html1+=`<tr class="total-row"><td>Total</td><td class="r">${totFac}</td><td class="r">${fmtD(totSin)}</td><td class="r">${fmtD(totCon)}</td></tr></tbody></table></div>`;
   document.getElementById('facturas-resumen').innerHTML=html1;
-
-  // Detalle por factura
-  const detalle=[...facsMes].sort((a,b)=>{
-    const da=parseFechaFactura(a.Fecha||a['Fecha']), db=parseFechaFactura(b.Fecha||b['Fecha']);
-    return db-da;
-  });
+  const detalle=[...facsMes].sort((a,b)=>{const da=parseFechaFactura(a.Fecha||a['Fecha']),db=parseFechaFactura(b.Fecha||b['Fecha']);return db-da;});
   let totDS=0,totDC=0;
-  detalle.forEach(r=>{
-    const bi=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0;
-    const iva=parseFloat(r['IVA (€)']||r['IVA'])||0;
-    totDS+=bi; totDC+=parseFloat(r['Total (€)']||r['Total'])||bi+iva;
-  });
-
-  let html2=`<div class="section"><div class="section-title">Detalle de facturas</div>
-    <table class="data-table"><thead><tr><th>Fecha</th><th>Proveedor</th><th class="r">Sin IVA</th><th class="r">Con IVA</th></tr></thead><tbody>`;
+  detalle.forEach(r=>{const bi=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0,iva=parseFloat(r['IVA (€)']||r['IVA'])||0;totDS+=bi;totDC+=parseFloat(r['Total (€)']||r['Total'])||bi+iva;});
+  let html2=`<div class="section"><div class="section-title">Detalle de facturas</div><table class="data-table"><thead><tr><th>Fecha</th><th>Proveedor</th><th class="r">Sin IVA</th><th class="r">Con IVA</th></tr></thead><tbody>`;
   detalle.forEach(r=>{
     const d=parseFechaFactura(r.Fecha||r['Fecha']);
     const fechaStr=d?`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`:'';
     const prov=(r.Proveedor||'').trim();
-    const bi=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0;
-    const iva=parseFloat(r['IVA (€)']||r['IVA'])||0;
-    const total=parseFloat(r['Total (€)']||r['Total'])||bi+iva;
+    const bi=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0,iva=parseFloat(r['IVA (€)']||r['IVA'])||0,total=parseFloat(r['Total (€)']||r['Total'])||bi+iva;
     const cat=getCategoria(prov,maestroMap);
-    html2+=`<tr>
-      <td style="font-size:11px;color:var(--texto-muted);white-space:nowrap">${fechaStr}</td>
-      <td><span class="badge ${badgeClass[cat]}">${cat}</span><br><span style="font-size:12px;font-weight:500">${prov}</span></td>
-      <td class="r">${fmtD(bi)}</td><td class="r">${fmtD(total)}</td>
-    </tr>`;
+    html2+=`<tr><td style="font-size:11px;color:var(--texto-muted);white-space:nowrap">${fechaStr}</td><td><span class="badge ${badgeClass[cat]}">${cat}</span><br><span style="font-size:12px;font-weight:500">${prov}</span></td><td class="r">${fmtD(bi)}</td><td class="r">${fmtD(total)}</td></tr>`;
   });
   if(!detalle.length) html2+=`<tr><td colspan="4" style="text-align:center;color:var(--texto-light);padding:20px">Sin facturas este mes</td></tr>`;
-  html2+=`<tr class="total-row"><td colspan="2">Total (${detalle.length} facturas)</td><td class="r">${fmtD(totDS)}</td><td class="r">${fmtD(totDC)}</td></tr>`;
-  html2+=`</tbody></table></div>`;
+  html2+=`<tr class="total-row"><td colspan="2">Total (${detalle.length} facturas)</td><td class="r">${fmtD(totDS)}</td><td class="r">${fmtD(totDC)}</td></tr></tbody></table></div>`;
   document.getElementById('facturas-detalle').innerHTML=html2;
 }
 
-function renderOperativa(idx){
+function renderOperativaDiaria(idx){
   const base=semanas[idx];
   const [a,s]=base.split('-');
   document.getElementById('op-label').textContent=`S${s} · ${a}`;
-  renderGrafico(skOffset(base,'actual'),  'Semana actual',    'chart-actual');
-  renderGrafico(skOffset(base,'anterior'),'Semana anterior',  'chart-anterior');
-  renderGrafico(skOffset(base,'año'),     'Año anterior',     'chart-año');
+  renderGrafico(skOffset(base,'actual'),'Semana actual','chart-actual');
+  renderGrafico(skOffset(base,'anterior'),'Semana anterior','chart-anterior');
+  renderGrafico(skOffset(base,'año'),'Año anterior','chart-año');
 }
 
 function renderTopVentas(idx){
   const base=semanas[idx];
   const [a,s]=base.split('-');
   document.getElementById('tv-label').textContent=`S${s} · ${a}`;
-  renderTop(skOffset(base,'actual'),  'Semana actual',   'top-actual');
-  renderTop(skOffset(base,'anterior'),'Semana anterior', 'top-anterior');
-  renderTop(skOffset(base,'año'),     'Año anterior',    'top-año');
+  renderTop(skOffset(base,'actual'),'Semana actual','top-actual');
+  renderTop(skOffset(base,'anterior'),'Semana anterior','top-anterior');
+  renderTop(skOffset(base,'año'),'Año anterior','top-año');
 }
 
 async function cargarDatos(){
   document.getElementById('last-update').textContent='Actualizando...';
   try {
-    const [r1,r2,r3,r4]=await Promise.all([
+    const [r1,r2,r3,r4,r5]=await Promise.all([
       fetch(`${API}?sheet=LK%20Diario`).then(r=>r.json()),
       fetch(`${API}?sheet=Detalle%20Productos`).then(r=>r.json()),
       fetch(`${API}?sheet=Lista`).then(r=>r.json()),
       fetch(`${API}?sheet=Maestro%20Proveedores`).then(r=>r.json()),
+      fetch(`${API}?sheet=LK%20Semanal`).then(r=>r.json()),
     ]);
-    rawDiario=r1; rawProductos=r2; rawFacturas=r3; rawMaestro=r4;
+    rawDiario=r1; rawProductos=r2; rawFacturas=r3; rawMaestro=r4; rawSemanal=r5;
     const set=new Set();
     r1.forEach(r=>{const k=semKey(r.Fecha);if(k) set.add(k);});
     semanas=Array.from(set).sort();
@@ -452,7 +612,8 @@ async function cargarDatos(){
     tvIdx=opIdx;
     const ahora=new Date();
     document.getElementById('last-update').textContent=`${ahora.getHours()}:${String(ahora.getMinutes()).padStart(2,'0')}`;
-    renderOperativa(opIdx);
+    renderOperativaDiaria(opIdx);
+    renderOperativaSemanal();
     renderTopVentas(tvIdx);
     renderFacturas();
   } catch(e){
@@ -461,19 +622,13 @@ async function cargarDatos(){
   }
 }
 
-// Navegación operativa
-document.getElementById('op-prev').addEventListener('click',()=>{if(opIdx>0){opIdx--;renderOperativa(opIdx);}});
-document.getElementById('op-next').addEventListener('click',()=>{if(opIdx<semanas.length-1){opIdx++;renderOperativa(opIdx);}});
-
-// Navegación top ventas
+document.getElementById('op-prev').addEventListener('click',()=>{if(opIdx>0){opIdx--;renderOperativaDiaria(opIdx);}});
+document.getElementById('op-next').addEventListener('click',()=>{if(opIdx<semanas.length-1){opIdx++;renderOperativaDiaria(opIdx);}});
 document.getElementById('tv-prev').addEventListener('click',()=>{if(tvIdx>0){tvIdx--;renderTopVentas(tvIdx);}});
 document.getElementById('tv-next').addEventListener('click',()=>{if(tvIdx<semanas.length-1){tvIdx++;renderTopVentas(tvIdx);}});
-
-// Navegación facturas
 document.getElementById('fac-prev').addEventListener('click',()=>{facMes--;if(facMes<0){facMes=11;facAño--;}renderFacturas();});
 document.getElementById('fac-next').addEventListener('click',()=>{facMes++;if(facMes>11){facMes=0;facAño++;}renderFacturas();});
 
-// Tabs
 document.querySelectorAll('.main-tab').forEach(b=>{
   b.addEventListener('click',()=>{
     document.querySelectorAll('.main-tab').forEach(x=>x.classList.remove('on'));
