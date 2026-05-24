@@ -31,9 +31,7 @@
   .header {
     background: var(--azul);
     padding: 52px 20px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
   }
   .header-title { font-size: 20px; font-weight: 600; color: white; letter-spacing: -0.3px; }
   .header-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 2px; }
@@ -71,8 +69,6 @@
   .content { padding: 16px; }
   .tab-panel { display: none; }
   .tab-panel.on { display: block; }
-
-  /* SECCIÓN GRÁFICO */
   .section {
     background: var(--gris-card); border-radius: 16px;
     padding: 16px; margin-bottom: 14px;
@@ -83,8 +79,6 @@
     color: var(--texto-muted); text-transform: uppercase;
     letter-spacing: 0.5px; margin-bottom: 12px;
   }
-
-  /* GRÁFICO BARRAS */
   .day-chart {
     display: grid;
     grid-template-columns: repeat(7, 1fr) 56px;
@@ -102,9 +96,8 @@
   .bar-comida { background: var(--azul-claro); }
   .bar-cena   { background: var(--naranja); }
   .bar-num { font-size: 8px; font-weight: 600; color: white; line-height: 1; }
-  .day-name { font-size: 10px; color: var(--texto-muted); margin-top: 3px; font-weight: 500; }
-
-  /* TOTALES DERECHA */
+  .day-name { font-size: 10px; color: var(--texto-muted); margin-top: 3px; font-weight: 600; }
+  .day-fecha { font-size: 8px; color: var(--texto-light); margin-top: 1px; }
   .total-col {
     display: flex; flex-direction: column; align-items: center;
     gap: 4px; padding-left: 8px;
@@ -114,13 +107,9 @@
   .tot-val { font-size: 13px; font-weight: 700; color: var(--texto); }
   .tot-label { font-size: 8px; color: var(--texto-light); text-transform: uppercase; letter-spacing: 0.3px; text-align: center; }
   .tot-divider { width: 100%; height: 0.5px; background: var(--gris-borde); margin: 2px 0; }
-
-  /* LEYENDA */
   .legend { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
   .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--texto-muted); }
   .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
-
-  /* TOP VENTAS */
   .top-table { width: 100%; border-collapse: collapse; }
   .top-table th {
     font-size: 10px; font-weight: 600; color: var(--texto-muted);
@@ -140,7 +129,6 @@
     display: inline-block;
   }
   .importe { font-weight: 600; color: var(--texto); }
-
   .loading { text-align: center; padding: 30px; font-size: 14px; color: var(--texto-muted); }
   .error { text-align: center; padding: 20px; font-size: 13px; color: var(--rojo); background: #fff5f5; border-radius: 12px; }
   .refresh-btn {
@@ -175,21 +163,16 @@
 </div>
 
 <div class="content">
-
-  <!-- PESTAÑA OPERATIVA -->
   <div class="tab-panel on" id="panel-operativa">
     <div id="chart-actual"></div>
     <div id="chart-pasada"></div>
     <div id="chart-año"></div>
   </div>
-
-  <!-- PESTAÑA TOP VENTAS -->
   <div class="tab-panel" id="panel-topventas">
     <div id="top-actual"></div>
     <div id="top-pasada"></div>
     <div id="top-año"></div>
   </div>
-
   <button class="refresh-btn" id="refresh-btn">↻ Actualizar datos</button>
 </div>
 
@@ -200,11 +183,11 @@ const DIAS = ['L','M','X','J','V','S','D'];
 let rawDiario = [], rawProductos = [];
 let semanas = [], idx = 0;
 
-function fmt(n){ 
-  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); 
+function fmt(n){
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
-function fmtE(n){ 
-  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '€'; 
+function fmtE(n){
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '€';
 }
 
 function semKey(f){
@@ -221,6 +204,35 @@ function semKey(f){
   return `${a}-${String(ns).padStart(2,'0')}`;
 }
 
+// Calcula la fecha del lunes de una semana dada su clave "yyyy-ss"
+function lunesDeSemana(sk){
+  const [a, s] = sk.split('-').map(Number);
+  const e1 = new Date(a, 0, 1, 12, 0, 0);
+  const ds = e1.getDay();
+  const fin1 = ds===0 ? 0 : 7-ds;
+  // El lunes de la semana 1 es el 1 de enero
+  // El lunes de la semana 2 es el 1 de enero + fin1 + 1 días
+  let offsetDias;
+  if(s === 1) {
+    offsetDias = 0;
+  } else {
+    offsetDias = fin1 + 1 + (s-2)*7;
+  }
+  const lunes = new Date(e1);
+  lunes.setDate(e1.getDate() + offsetDias);
+  return lunes;
+}
+
+function fechaDia(sk, numDia){ // numDia: 1=lunes...7=domingo
+  const lunes = lunesDeSemana(sk);
+  const d = new Date(lunes);
+  d.setDate(lunes.getDate() + (numDia - 1));
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yy = String(d.getFullYear()).slice(2);
+  return `${dd}/${mm}/${yy}`;
+}
+
 function diaN(s){
   const m={lunes:1,martes:2,'miércoles':3,jueves:4,viernes:5,'sábado':6,domingo:7};
   return m[(s||'').toLowerCase().trim()]||0;
@@ -235,13 +247,11 @@ function skOffset(base, p){
     const t = `${parseInt(a)-1}-${s}`;
     const exacta = semanas.find(k=>k===t);
     if(exacta) return exacta;
-    // Si no existe exacta, busca la semana más cercana del año anterior
-    const añoAnterior = semanas.filter(k=>k.startsWith(`${parseInt(a)-1}-`));
-    if(!añoAnterior.length) return base;
-    // Ordena por proximidad al número de semana
+    const añoAnt = semanas.filter(k=>k.startsWith(`${parseInt(a)-1}-`));
+    if(!añoAnt.length) return base;
     const numSem = parseInt(s);
-    return añoAnterior.sort((a,b)=>
-      Math.abs(parseInt(a.split('-')[1])-numSem) - Math.abs(parseInt(b.split('-')[1])-numSem)
+    return añoAnt.sort((x,y)=>
+      Math.abs(parseInt(x.split('-')[1])-numSem) - Math.abs(parseInt(y.split('-')[1])-numSem)
     )[0];
   }
   return base;
@@ -305,6 +315,7 @@ function renderGrafico(sk, titulo, containerId){
     const hC=tot>0?Math.max(Math.round(d.comida/maxT*BAR),2):0;
     const hCe=tot>0?Math.max(Math.round(d.cena/maxT*BAR),2):0;
     const tk=d.ticket>0?Math.round(d.ticket):0;
+    const fechaStr = fechaDia(sk, i);
     html+=`<div class="day-col">
       <div class="day-venta">${d.ventas>0?fmtE(d.ventas):''}</div>
       <div class="day-ticket">${tk>0?tk+'€':'-'}</div>
@@ -318,6 +329,7 @@ function renderGrafico(sk, titulo, containerId){
         </div>
       </div>
       <div class="day-name">${DIAS[i-1]}</div>
+      <div class="day-fecha">${fechaStr}</div>
     </div>`;
   }
 
@@ -407,13 +419,13 @@ function render(){
   const skPasada = skOffset(base,'pasada');
   const skAño    = skOffset(base,'año');
 
-  renderGrafico(skActual, 'Semana actual',   'chart-actual');
-  renderGrafico(skPasada, 'Semana pasada',   'chart-pasada');
-  renderGrafico(skAño,    'Año anterior',    'chart-año');
+  renderGrafico(skActual, 'Semana actual', 'chart-actual');
+  renderGrafico(skPasada, 'Semana pasada', 'chart-pasada');
+  renderGrafico(skAño,    'Año anterior',  'chart-año');
 
-  renderTop(skActual, 'Semana actual',  'top-actual');
-  renderTop(skPasada, 'Semana pasada',  'top-pasada');
-  renderTop(skAño,    'Año anterior',   'top-año');
+  renderTop(skActual, 'Semana actual', 'top-actual');
+  renderTop(skPasada, 'Semana pasada', 'top-pasada');
+  renderTop(skAño,    'Año anterior',  'top-año');
 }
 
 async function cargarDatos(){
