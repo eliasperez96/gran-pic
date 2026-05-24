@@ -158,9 +158,15 @@
   <!-- OPERATIVA SEMANAL -->
   <div class="tab-panel" id="panel-op-semanal">
     <div class="section">
-      <div class="section-title">Resumen por periodos</div>
+      <div class="section-title">Resumen por periodos de 13 semanas</div>
       <div class="sem-scroll-wrap">
         <div id="periodos-tabla"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Resumen por periodos de 4 semanas</div>
+      <div class="sem-scroll-wrap">
+        <div id="periodos4-tabla"></div>
       </div>
     </div>
     <div class="section">
@@ -316,10 +322,12 @@ function buildMaestroMap(){
 // Coste de comida desde facturas por rango de fechas
 function costeComidaEnRango(fechaInicio,fechaFin,maestroMap){
   let coste=0;
+  const t0=fechaInicio.getTime(), t1=fechaFin.getTime();
   rawFacturas.forEach(r=>{
     const d=parseFecha(r.Fecha||r['Fecha']);
     if(!d||isNaN(d)) return;
-    if(d<fechaInicio||d>fechaFin) return;
+    const dt=d.getTime();
+    if(dt<t0||dt>t1) return;
     const prov=(r.Proveedor||'').trim();
     const cat=maestroMap[prov.toLowerCase()]||'Otros';
     if(cat!=='Comida') return;
@@ -348,10 +356,12 @@ function ventasComidaEnRango(fechaInicio,fechaFin){
 // Ventas de comida desde LK Diario (columna Comida sin IVA) por rango
 function ventasComidaDiarioEnRango(fechaInicio,fechaFin){
   let ventas=0;
+  const t0=fechaInicio.getTime(), t1=fechaFin.getTime();
   rawDiario.forEach(r=>{
     const d=parseFecha(r.Fecha);
     if(!d||isNaN(d)) return;
-    if(d<fechaInicio||d>fechaFin) return;
+    const dt=d.getTime();
+    if(dt<t0||dt>t1) return;
     const turno=(r.Turno||'').toString().trim().toLowerCase();
     if(turno!=='total') return;
     ventas+=parseFloat(r['Comida sin IVA']||r['Comida (sin IVA)']||0);
@@ -599,6 +609,34 @@ function renderOperativaSemanal(){
   htmlPer+=filaData('Total',tot25,tot26,'total-sem');
   htmlPer+=`</tbody></table>`;
   document.getElementById('periodos-tabla').innerHTML=htmlPer;
+
+  // ── TABLA PERIODOS DE 4 SEMANAS ──
+  let htmlPer4=`<table class="sem-table">${headersTabla('Periodo')}<tbody>`;
+  let totV25_4=0,totT25_4=0,totV26_4=0,totT26_4=0;
+  for(let s=1;s<=53;s+=4){
+    const desde=s, hasta=Math.min(s+3,53);
+    if(desde>semAnterior) break; // futuro completo
+    const hastaEfectivo=Math.min(hasta,semAnterior);
+    const esCurso=semActual>=desde&&semActual<=hasta;
+    const esFuturo=desde>semActual;
+    const d25=sumarRango(data,desde,hastaEfectivo,2025);
+    const d26=esFuturo?null:sumarRango(data,desde,hastaEfectivo,2026);
+    if(d25){totV25_4+=d25.v;totT25_4+=d25.t;}
+    if(d26){totV26_4+=d26.v;totT26_4+=d26.t;}
+    const label=desde===hastaEfectivo
+      ?`S${String(desde).padStart(2,'0')}`
+      :`S${String(desde).padStart(2,'0')}-S${String(hastaEfectivo).padStart(2,'0')}`;
+    const nota=esCurso?`<span style="font-size:8px;opacity:0.65;display:block">hasta S${semAnterior}</span>`:'';
+    htmlPer4+=filaData(`${label}${nota}`,d25,d26,esCurso?'sem-current':'');
+  }
+  const totP25_4=totV25_4>0?totT25_4/totV25_4:0, totP26_4=totV26_4>0?totT26_4/totV26_4:0;
+  htmlPer4+=filaData('Total',
+    totV25_4>0?{v:totV25_4,p:totP25_4,t:totT25_4}:null,
+    totV26_4>0?{v:totV26_4,p:totP26_4,t:totT26_4}:null,
+    'total-sem'
+  );
+  htmlPer4+=`</tbody></table>`;
+  document.getElementById('periodos4-tabla').innerHTML=htmlPer4;
 
   let html=`<table class="sem-table">${headersTabla('Sem')}<tbody>`;
   let totV25=0,totT25=0,totV26=0,totT26=0;
