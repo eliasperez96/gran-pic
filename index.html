@@ -18,7 +18,6 @@
     --texto: #1a1a18;
     --texto-muted: #6b6b68;
     --texto-light: #9b9b96;
-    --verde: #1D9E75;
     --rojo: #E24B4A;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -40,64 +39,55 @@
   .header-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 2px; }
   .header-badge {
     background: rgba(255,255,255,0.15);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 12px;
-    color: white;
-    font-weight: 500;
+    border-radius: 20px; padding: 6px 14px;
+    font-size: 12px; color: white; font-weight: 500;
   }
   .nav-bar {
     background: var(--azul);
     padding: 0 20px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
   }
   .nav-week { display: flex; align-items: center; gap: 12px; }
   .nav-btn {
-    background: rgba(255,255,255,0.15);
-    border: none;
-    border-radius: 20px;
-    width: 32px; height: 32px;
+    background: rgba(255,255,255,0.15); border: none;
+    border-radius: 20px; width: 32px; height: 32px;
     display: flex; align-items: center; justify-content: center;
     color: white; font-size: 18px; cursor: pointer;
   }
   .nav-btn:active { background: rgba(255,255,255,0.3); }
   .nav-label { font-size: 15px; font-weight: 600; color: white; min-width: 80px; text-align: center; }
-  .period-tabs {
+  .main-tabs {
     display: flex; gap: 4px;
     background: rgba(255,255,255,0.1);
     border-radius: 20px; padding: 3px;
   }
-  .period-tab {
+  .main-tab {
     font-size: 11px; font-weight: 500;
     color: rgba(255,255,255,0.6);
-    padding: 5px 10px; border-radius: 16px;
+    padding: 5px 12px; border-radius: 16px;
     border: none; background: none; cursor: pointer;
   }
-  .period-tab.on { background: white; color: var(--azul); }
+  .main-tab.on { background: white; color: var(--azul); }
   .content { padding: 16px; }
-  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-  .kpi-card {
-    background: var(--gris-card); border-radius: 14px;
-    padding: 14px 16px; border: 0.5px solid var(--gris-borde);
-  }
-  .kpi-label { font-size: 11px; color: var(--texto-muted); margin-bottom: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
-  .kpi-val { font-size: 24px; font-weight: 600; color: var(--texto); letter-spacing: -0.5px; }
-  .kpi-sub { font-size: 11px; color: var(--texto-light); margin-top: 3px; }
+  .tab-panel { display: none; }
+  .tab-panel.on { display: block; }
+
+  /* SECCIÓN GRÁFICO */
   .section {
     background: var(--gris-card); border-radius: 16px;
     padding: 16px; margin-bottom: 14px;
     border: 0.5px solid var(--gris-borde);
   }
   .section-title {
-    font-size: 13px; font-weight: 600;
+    font-size: 12px; font-weight: 600;
     color: var(--texto-muted); text-transform: uppercase;
-    letter-spacing: 0.5px; margin-bottom: 14px;
+    letter-spacing: 0.5px; margin-bottom: 12px;
   }
+
+  /* GRÁFICO BARRAS */
   .day-chart {
     display: grid;
-    grid-template-columns: repeat(7, 1fr) 48px;
+    grid-template-columns: repeat(7, 1fr) 56px;
     gap: 4px; align-items: end;
   }
   .day-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
@@ -107,43 +97,52 @@
     background: #e8f2fc; border-radius: 8px; padding: 1px 4px;
   }
   .day-total { font-size: 12px; font-weight: 600; color: var(--texto); }
-  .day-bars {
-    display: flex; flex-direction: column; gap: 1px;
-    width: 100%; justify-content: flex-end;
-  }
-  .bar { border-radius: 2px; min-height: 2px; width: 100%; }
+  .day-bars { display: flex; flex-direction: column; gap: 1px; width: 100%; justify-content: flex-end; }
+  .bar { border-radius: 2px; min-height: 2px; width: 100%; display: flex; align-items: center; justify-content: center; }
   .bar-comida { background: var(--azul-claro); }
   .bar-cena   { background: var(--naranja); }
+  .bar-num { font-size: 8px; font-weight: 600; color: white; line-height: 1; }
   .day-name { font-size: 10px; color: var(--texto-muted); margin-top: 3px; font-weight: 500; }
+
+  /* TOTALES DERECHA */
   .total-col {
     display: flex; flex-direction: column; align-items: center;
-    gap: 3px; padding-left: 8px;
+    gap: 4px; padding-left: 8px;
     border-left: 1px solid var(--gris-borde);
   }
-  .total-big { font-size: 15px; font-weight: 700; color: var(--texto); }
-  .total-label { font-size: 8px; color: var(--texto-light); text-transform: uppercase; letter-spacing: 0.3px; }
-  .total-sub-val { font-size: 11px; font-weight: 600; }
-  .legend {
-    display: flex; gap: 14px; margin-top: 12px; flex-wrap: wrap;
-  }
+  .tot-item { display: flex; flex-direction: column; align-items: center; }
+  .tot-val { font-size: 13px; font-weight: 700; color: var(--texto); }
+  .tot-label { font-size: 8px; color: var(--texto-light); text-transform: uppercase; letter-spacing: 0.3px; text-align: center; }
+  .tot-divider { width: 100%; height: 0.5px; background: var(--gris-borde); margin: 2px 0; }
+
+  /* LEYENDA */
+  .legend { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
   .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--texto-muted); }
   .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
-  .plato-row {
-    display: flex; align-items: center;
-    padding: 10px 0; border-bottom: 0.5px solid var(--gris-borde); gap: 10px;
+
+  /* TOP VENTAS */
+  .top-table { width: 100%; border-collapse: collapse; }
+  .top-table th {
+    font-size: 10px; font-weight: 600; color: var(--texto-muted);
+    text-transform: uppercase; letter-spacing: 0.3px;
+    padding: 6px 4px; border-bottom: 1px solid var(--gris-borde);
+    text-align: left;
   }
-  .plato-row:last-child { border-bottom: none; }
-  .plato-rank { font-size: 11px; font-weight: 700; color: var(--texto-light); min-width: 20px; text-align: center; }
-  .plato-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--texto); }
-  .plato-uds { font-size: 11px; color: var(--texto-muted); min-width: 28px; text-align: right; }
-  .plato-importe { font-size: 13px; font-weight: 600; color: var(--texto); min-width: 52px; text-align: right; }
-  .plato-pct {
+  .top-table th.r { text-align: right; }
+  .top-table td { padding: 9px 4px; border-bottom: 0.5px solid var(--gris-borde); font-size: 12px; vertical-align: middle; }
+  .top-table tr:last-child td { border-bottom: none; }
+  .top-table td.r { text-align: right; }
+  .rank { font-size: 10px; font-weight: 700; color: var(--texto-light); }
+  .plato-n { font-weight: 500; color: var(--texto); }
+  .pct-badge {
     font-size: 10px; font-weight: 600; color: var(--azul-claro);
     background: #e8f2fc; border-radius: 6px; padding: 2px 6px;
-    min-width: 36px; text-align: center;
+    display: inline-block;
   }
-  .loading { text-align: center; padding: 40px 20px; font-size: 14px; color: var(--texto-muted); }
-  .error { text-align: center; padding: 24px; font-size: 13px; color: var(--rojo); background: #fff5f5; border-radius: 12px; }
+  .importe { font-weight: 600; color: var(--texto); }
+
+  .loading { text-align: center; padding: 30px; font-size: 14px; color: var(--texto-muted); }
+  .error { text-align: center; padding: 20px; font-size: 13px; color: var(--rojo); background: #fff5f5; border-radius: 12px; }
   .refresh-btn {
     display: flex; align-items: center; justify-content: center; gap: 6px;
     width: 100%; padding: 14px;
@@ -169,34 +168,26 @@
     <span class="nav-label" id="wlabel">...</span>
     <button class="nav-btn" id="next">›</button>
   </div>
-  <div class="period-tabs">
-    <button class="period-tab on" data-p="actual">Actual</button>
-    <button class="period-tab" data-p="pasada">Pasada</button>
-    <button class="period-tab" data-p="año">Año ant.</button>
+  <div class="main-tabs">
+    <button class="main-tab on" data-tab="operativa">Operativa</button>
+    <button class="main-tab" data-tab="topventas">Top ventas</button>
   </div>
 </div>
 
 <div class="content">
-  <div id="kpis" class="kpi-grid">
-    <div class="kpi-card"><div class="loading">...</div></div>
-    <div class="kpi-card"><div class="loading">...</div></div>
-    <div class="kpi-card"><div class="loading">...</div></div>
-    <div class="kpi-card"><div class="loading">...</div></div>
+
+  <!-- PESTAÑA OPERATIVA -->
+  <div class="tab-panel on" id="panel-operativa">
+    <div id="chart-actual"></div>
+    <div id="chart-pasada"></div>
+    <div id="chart-año"></div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Comensales por día</div>
-    <div id="chart"><div class="loading">Cargando datos del restaurante...</div></div>
-    <div class="legend">
-      <div class="legend-item"><span class="legend-dot" style="background:var(--azul-claro)"></span>Comida</div>
-      <div class="legend-item"><span class="legend-dot" style="background:var(--naranja)"></span>Cena</div>
-      <div class="legend-item" style="color:var(--texto-light)">· ticket medio</div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Top 5 platos</div>
-    <div id="top5"><div class="loading">Cargando...</div></div>
+  <!-- PESTAÑA TOP VENTAS -->
+  <div class="tab-panel" id="panel-topventas">
+    <div id="top-actual"></div>
+    <div id="top-pasada"></div>
+    <div id="top-año"></div>
   </div>
 
   <button class="refresh-btn" id="refresh-btn">↻ Actualizar datos</button>
@@ -207,7 +198,7 @@ const API = 'https://script.google.com/macros/s/AKfycbxl0_5ACr0CevKCHZOkE2zWwdhV
 const DIAS = ['L','M','X','J','V','S','D'];
 
 let rawDiario = [], rawProductos = [];
-let semanas = [], idx = 0, periodo = 'actual';
+let semanas = [], idx = 0;
 
 function fmt(n){ return Math.round(n).toLocaleString('es-ES'); }
 function fmtE(n){ return Math.round(n).toLocaleString('es-ES') + '€'; }
@@ -219,11 +210,16 @@ function semKey(f){
   if(isNaN(d)) return null;
   const a = d.getFullYear();
   const e1 = new Date(a,0,1,12,0,0);
-  const ds = e1.getDay(); // 0=dom,1=lun...6=sab
-  const fin1 = ds===0 ? 0 : 7-ds; // días hasta primer domingo desde 1 enero
+  const ds = e1.getDay();
+  const fin1 = ds===0 ? 0 : 7-ds;
   const diff = Math.floor((d-e1)/86400000);
   const ns = diff<=fin1 ? 1 : Math.floor((diff-fin1-1)/7)+2;
   return `${a}-${String(ns).padStart(2,'0')}`;
+}
+
+function diaN(s){
+  const m={lunes:1,martes:2,'miércoles':3,jueves:4,viernes:5,'sábado':6,domingo:7};
+  return m[(s||'').toLowerCase().trim()]||0;
 }
 
 function skOffset(base, p){
@@ -238,15 +234,9 @@ function skOffset(base, p){
   return base;
 }
 
-function diaN(s){
-  const m={lunes:1,martes:2,'miércoles':3,jueves:4,viernes:5,'sábado':6,domingo:7};
-  return m[(s||'').toLowerCase().trim()]||0;
-}
-
 function agruparDiario(sk){
   const dias={};
   for(let i=1;i<=7;i++) dias[i]={comida:0,cena:0,ventas:0,ticket:0};
-
   rawDiario.forEach(r=>{
     if(semKey(r.Fecha)!==sk) return;
     const nd = diaN(r['Día semana']);
@@ -255,75 +245,47 @@ function agruparDiario(sk){
     const c = parseFloat(r.Comensales)||0;
     const v = parseFloat(r['Ventas sin IVA'])||0;
     const t = parseFloat(r['Ticket medio sin IVA'])||0;
-
-    if(turno==='total'){
-      dias[nd].ventas = v;   // ventas totales del día → solo de fila Total
-      dias[nd].ticket = t;   // ticket medio del día
-    }
-    if(turno.includes('almuerzo')) dias[nd].comida = c;
-    if(turno.includes('cena'))     dias[nd].cena   = c;
+    if(turno==='total'){ dias[nd].ventas=v; dias[nd].ticket=t; }
+    if(turno.includes('almuerzo')) dias[nd].comida=c;
+    if(turno.includes('cena'))     dias[nd].cena=c;
   });
   return dias;
 }
 
 function agruparProductos(sk){
   const prod = {};
-  let totalVentas = 0;
+  let totalComida = 0;
   rawProductos.forEach(r=>{
     if(semKey(r.Fecha)!==sk) return;
     const nombre = (r.Producto||'').trim();
     const tipo = (r.Tipo||'').trim().toLowerCase();
-    if(!nombre || tipo==='bebida') return; // solo platos de comida
+    if(!nombre || tipo==='bebida') return;
     const v = parseFloat(r['Total sin IVA'])||0;
     const q = parseFloat(r.Cantidad)||0;
     if(!prod[nombre]) prod[nombre]={ventas:0,uds:0};
     prod[nombre].ventas += v;
     prod[nombre].uds += q;
-    totalVentas += v;
+    totalComida += v;
   });
-  return { prod, totalVentas };
+  return { prod, totalComida };
 }
 
-function renderKPIs(dias){
-  let totC=0,totCe=0,totV=0,totCom=0;
-  for(let i=1;i<=7;i++){
-    totC  += dias[i].comida;
-    totCe += dias[i].cena;
-    totV  += dias[i].ventas;
-  }
-  totCom = totC + totCe;
-  const ticket = totCom>0 ? totV/totCom : 0;
-
-  document.getElementById('kpis').innerHTML=`
-    <div class="kpi-card">
-      <div class="kpi-label">Ventas semana</div>
-      <div class="kpi-val">${fmtE(totV)}</div>
-      <div class="kpi-sub">sin IVA</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Ticket medio</div>
-      <div class="kpi-val">${fmtE(ticket)}</div>
-      <div class="kpi-sub">${fmt(totCom)} comensales</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Comida</div>
-      <div class="kpi-val" style="color:var(--azul-claro)">${fmt(totC)}</div>
-      <div class="kpi-sub">comensales almuerzo</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Cena</div>
-      <div class="kpi-val" style="color:var(--naranja)">${fmt(totCe)}</div>
-      <div class="kpi-sub">comensales cena</div>
-    </div>`;
-}
-
-function renderChart(dias){
+function renderGrafico(sk, titulo, containerId){
+  const dias = agruparDiario(sk);
   const maxT = Math.max(...Object.values(dias).map(d=>d.comida+d.cena),1);
-  const BAR = 90;
-  let totC=0,totCe=0,totV=0;
-  for(let i=1;i<=7;i++){totC+=dias[i].comida;totCe+=dias[i].cena;totV+=dias[i].ventas;}
+  const BAR = 80;
 
-  let html='<div class="day-chart">';
+  let totC=0,totCe=0,totV=0,totCom=0;
+  for(let i=1;i<=7;i++){totC+=dias[i].comida;totCe+=dias[i].cena;totV+=dias[i].ventas;}
+  totCom=totC+totCe;
+  const ticket=totCom>0?totV/totCom:0;
+
+  const [a,s] = sk.split('-');
+
+  let html=`<div class="section">
+    <div class="section-title">${titulo} — S${s} · ${a}</div>
+    <div class="day-chart">`;
+
   for(let i=1;i<=7;i++){
     const d=dias[i];
     const tot=d.comida+d.cena;
@@ -335,60 +297,110 @@ function renderChart(dias){
       <div class="day-ticket">${tk>0?tk+'€':'-'}</div>
       <div class="day-total">${tot||''}</div>
       <div class="day-bars" style="height:${BAR}px">
-        <div class="bar bar-cena"   style="height:${hCe}px;display:flex;align-items:center;justify-content:center;">${d.cena>0?`<span style="font-size:9px;font-weight:600;color:white;">${d.cena}</span>`:''}</div>
-        <div class="bar bar-comida" style="height:${hC}px;display:flex;align-items:center;justify-content:center;">${d.comida>0?`<span style="font-size:9px;font-weight:600;color:white;">${d.comida}</span>`:''}</div>
+        <div class="bar bar-cena" style="height:${hCe}px">
+          ${hCe>=14&&d.cena>0?`<span class="bar-num">${d.cena}</span>`:''}
+        </div>
+        <div class="bar bar-comida" style="height:${hC}px">
+          ${hC>=14&&d.comida>0?`<span class="bar-num">${d.comida}</span>`:''}
+        </div>
       </div>
       <div class="day-name">${DIAS[i-1]}</div>
     </div>`;
   }
+
   html+=`<div class="total-col">
-    <div class="total-big">${fmt(totC+totCe)}</div>
-    <div class="total-label">total</div>
-    <div style="margin-top:6px">
-      <div class="total-sub-val" style="color:var(--azul-claro)">${fmt(totC)}</div>
-      <div class="total-label">comida</div>
-      <div class="total-sub-val" style="color:var(--naranja);margin-top:4px">${fmt(totCe)}</div>
-      <div class="total-label">cena</div>
+    <div class="tot-item">
+      <div class="tot-val">${fmtE(totV)}</div>
+      <div class="tot-label">ventas</div>
     </div>
-    <div style="font-size:10px;color:var(--texto-light);margin-top:6px;text-align:center">${fmtE(totV)}</div>
-  </div></div>`;
-  document.getElementById('chart').innerHTML=html;
+    <div class="tot-divider"></div>
+    <div class="tot-item">
+      <div class="tot-val">${fmtE(ticket)}</div>
+      <div class="tot-label">ticket</div>
+    </div>
+    <div class="tot-divider"></div>
+    <div class="tot-item">
+      <div class="tot-val">${fmt(totCom)}</div>
+      <div class="tot-label">total</div>
+    </div>
+    <div class="tot-divider"></div>
+    <div class="tot-item">
+      <div class="tot-val" style="color:var(--naranja)">${fmt(totCe)}</div>
+      <div class="tot-label">cena</div>
+    </div>
+    <div class="tot-divider"></div>
+    <div class="tot-item">
+      <div class="tot-val" style="color:var(--azul-claro)">${fmt(totC)}</div>
+      <div class="tot-label">comida</div>
+    </div>
+  </div></div>
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:var(--azul-claro)"></span>Comida</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--naranja)"></span>Cena</div>
+  </div>
+  </div>`;
+
+  document.getElementById(containerId).innerHTML=html;
 }
 
-function renderTop5(sk){
-  const {prod, totalVentas} = agruparProductos(sk);
+function renderTop(sk, titulo, containerId){
+  const {prod, totalComida} = agruparProductos(sk);
   const sorted = Object.entries(prod).sort((a,b)=>b[1].ventas-a[1].ventas).slice(0,5);
+  const [a,s] = sk.split('-');
+
+  let html=`<div class="section">
+    <div class="section-title">${titulo} — S${s} · ${a}</div>`;
 
   if(!sorted.length){
-    document.getElementById('top5').innerHTML='<div class="loading">Sin datos de productos</div>';
+    html+='<div class="loading">Sin datos</div></div>';
+    document.getElementById(containerId).innerHTML=html;
     return;
   }
 
-  let html='';
+  html+=`<table class="top-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Plato</th>
+        <th class="r">Und.</th>
+        <th class="r">Ventas</th>
+        <th class="r">% comida</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
   sorted.forEach(([nombre,d],i)=>{
-    const pct = totalVentas>0?Math.round(d.ventas/totalVentas*100):0;
-    html+=`<div class="plato-row">
-      <span class="plato-rank">#${i+1}</span>
-      <span class="plato-name">${nombre}</span>
-      <span class="plato-uds">${Math.round(d.uds)}</span>
-      <span class="plato-importe">${fmtE(d.ventas)}</span>
-      <span class="plato-pct">${pct}%</span>
-    </div>`;
+    const pct = totalComida>0?Math.round(d.ventas/totalComida*100):0;
+    html+=`<tr>
+      <td><span class="rank">#${i+1}</span></td>
+      <td><span class="plato-n">${nombre}</span></td>
+      <td class="r">${Math.round(d.uds)}</td>
+      <td class="r"><span class="importe">${fmtE(d.ventas)}</span></td>
+      <td class="r"><span class="pct-badge">${pct}%</span></td>
+    </tr>`;
   });
-  document.getElementById('top5').innerHTML=html;
+
+  html+=`</tbody></table></div>`;
+  document.getElementById(containerId).innerHTML=html;
 }
 
 function render(){
   if(!semanas.length) return;
   const base = semanas[idx];
-  const sk = skOffset(base, periodo);
-  const [a,s] = sk.split('-');
+  const [a,s] = base.split('-');
   document.getElementById('wlabel').textContent=`S${s} · ${a}`;
 
-  const dias = agruparDiario(sk);
-  renderKPIs(dias);
-  renderChart(dias);
-  renderTop5(sk);
+  const skActual = skOffset(base,'actual');
+  const skPasada = skOffset(base,'pasada');
+  const skAño    = skOffset(base,'año');
+
+  renderGrafico(skActual, 'Semana actual',   'chart-actual');
+  renderGrafico(skPasada, 'Semana pasada',   'chart-pasada');
+  renderGrafico(skAño,    'Año anterior',    'chart-año');
+
+  renderTop(skActual, 'Semana actual',  'top-actual');
+  renderTop(skPasada, 'Semana pasada',  'top-pasada');
+  renderTop(skAño,    'Año anterior',   'top-año');
 }
 
 async function cargarDatos(){
@@ -414,8 +426,10 @@ async function cargarDatos(){
       `${ahora.getHours()}:${String(ahora.getMinutes()).padStart(2,'0')}`;
     render();
   } catch(e) {
-    document.getElementById('chart').innerHTML=
-      `<div class="error">Error conectando con los datos.<br>Comprueba la conexión e inténtalo de nuevo.</div>`;
+    ['chart-actual','chart-pasada','chart-año','top-actual','top-pasada','top-año'].forEach(id=>{
+      document.getElementById(id).innerHTML=
+        `<div class="section"><div class="error">Error cargando datos</div></div>`;
+    });
     document.getElementById('last-update').textContent='Error';
   }
 }
@@ -423,12 +437,13 @@ async function cargarDatos(){
 document.getElementById('prev').addEventListener('click',()=>{ if(idx>0){idx--;render();} });
 document.getElementById('next').addEventListener('click',()=>{ if(idx<semanas.length-1){idx++;render();} });
 document.getElementById('refresh-btn').addEventListener('click',cargarDatos);
-document.querySelectorAll('.period-tab').forEach(b=>{
+
+document.querySelectorAll('.main-tab').forEach(b=>{
   b.addEventListener('click',()=>{
-    document.querySelectorAll('.period-tab').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.main-tab').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');
-    periodo=b.dataset.p;
-    render();
+    document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('on'));
+    document.getElementById('panel-'+b.dataset.tab).classList.add('on');
   });
 });
 
