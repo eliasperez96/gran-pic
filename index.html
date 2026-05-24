@@ -200,8 +200,12 @@ const DIAS = ['L','M','X','J','V','S','D'];
 let rawDiario = [], rawProductos = [];
 let semanas = [], idx = 0;
 
-function fmt(n){ return Math.round(n).toLocaleString('es-ES'); }
-function fmtE(n){ return Math.round(n).toLocaleString('es-ES') + '€'; }
+function fmt(n){ 
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); 
+}
+function fmtE(n){ 
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '€'; 
+}
 
 function semKey(f){
   if(!f) return null;
