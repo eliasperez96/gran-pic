@@ -335,8 +335,8 @@ function renderChart(dias){
       <div class="day-ticket">${tk>0?tk+'€':'-'}</div>
       <div class="day-total">${tot||''}</div>
       <div class="day-bars" style="height:${BAR}px">
-        <div class="bar bar-cena"   style="height:${hCe}px"></div>
-        <div class="bar bar-comida" style="height:${hC}px"></div>
+        <div class="bar bar-cena"   style="height:${hCe}px;display:flex;align-items:center;justify-content:center;">${d.cena>0?`<span style="font-size:9px;font-weight:600;color:white;">${d.cena}</span>`:''}</div>
+        <div class="bar bar-comida" style="height:${hC}px;display:flex;align-items:center;justify-content:center;">${d.comida>0?`<span style="font-size:9px;font-weight:600;color:white;">${d.comida}</span>`:''}</div>
       </div>
       <div class="day-name">${DIAS[i-1]}</div>
     </div>`;
