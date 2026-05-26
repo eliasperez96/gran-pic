@@ -301,7 +301,7 @@ function skOffset(base,p){
 function parseFecha(f){
   if(!f) return null;
   const s=f.toString().trim();
-  if(s.includes('T')) return new Date(s);
+  if(s.includes('T')) return new Date(s.substring(0,10)+'T12:00:00');
   if(s.match(/^\d{4}-\d{2}-\d{2}$/)) return new Date(s+'T12:00:00');
   if(s.includes('/')){const p=s.split('/');if(p.length===3) return new Date(`${p[2].length===2?'20'+p[2]:p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}T12:00:00`);}
   const n=parseFloat(s);if(!isNaN(n)&&n>40000) return new Date((n-25569)*86400000);
