@@ -243,7 +243,6 @@ function margenClass(pct){
 function semKey(f){
   if(!f) return null;
   const s=f.toString().trim();
-  // Usar solo la parte de fecha (YYYY-MM-DD) ignorando la hora UTC
   const fechaSolo=s.substring(0,10);
   const d=new Date(fechaSolo+'T12:00:00');
   if(isNaN(d)) return null;
@@ -251,6 +250,10 @@ function semKey(f){
   const ds=e1.getDay(),fin1=ds===0?0:7-ds;
   const diff=Math.floor((d-e1)/86400000);
   const ns=diff<=fin1?1:Math.floor((diff-fin1-1)/7)+2;
+  // Si la semana calculada es 1 pero la fecha es de diciembre → es S53 del año anterior
+  if(ns===1 && d.getMonth()===11){
+    return `${a}-53`;
+  }
   return `${a}-${String(ns).padStart(2,'0')}`;
 }
 
