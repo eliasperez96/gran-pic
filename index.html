@@ -827,7 +827,12 @@ async function cargarDatos(){
     r1.forEach(r=>{const k=semKey(r.Fecha);if(k) set.add(k);});
     semanas=Array.from(set).sort();
     const hoy=semKey(new Date().toISOString().slice(0,10));
-    opIdx=semanas.indexOf(hoy);if(opIdx<0) opIdx=semanas.length-1;
+    opIdx=semanas.indexOf(hoy);
+    if(opIdx<0){
+      semanas.push(hoy);
+      semanas.sort();
+      opIdx=semanas.indexOf(hoy);
+    }
     tvIdx=opIdx;
     const ahora=new Date();
     document.getElementById('last-update').textContent=`${ahora.getHours()}:${String(ahora.getMinutes()).padStart(2,'0')}`;
