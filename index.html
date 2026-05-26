@@ -661,13 +661,13 @@ function renderOperativaSemanal(){
 // ── OPERATIVA DIARIA ──────────────────────────────────────────────────────────
 function agruparDiario(sk){
   const dias={};
-  for(let i=1;i<=7;i++) dias[i]={comida:0,cena:0,ventas:0,ticket:0};
+  for(let i=1;i<=7;i++) dias[i]={comida:0,cena:0,total:0,ventas:0,ticket:0};
   rawDiario.forEach(r=>{
     if(semKey(r.Fecha)!==sk) return;
     const nd=diaN(r['Día semana']);if(!nd) return;
     const turno=(r.Turno||'').toString().trim().toLowerCase();
     const c=parseFloat(r.Comensales)||0,v=parseFloat(r['Ventas sin IVA'])||0,t=parseFloat(r['Ticket medio sin IVA'])||0;
-    if(turno==='total'){dias[nd].ventas=v;dias[nd].ticket=t;}
+    if(turno==="total"){dias[nd].ventas=v;dias[nd].ticket=t;dias[nd].total=c;}
     if(turno.includes('almuerzo')) dias[nd].comida=c;
     if(turno.includes('cena'))     dias[nd].cena=c;
   });
@@ -690,15 +690,16 @@ function agruparProductos(sk){
 
 function renderGrafico(sk,titulo,containerId){
   const dias=agruparDiario(sk);
-  const maxT=Math.max(...Object.values(dias).map(d=>d.comida+d.cena),1);
+  const maxT=Math.max(...Object.values(dias).map(d=>d.total||d.comida+d.cena),1);
   const BAR=80;
-  let totC=0,totCe=0,totV=0;
-  for(let i=1;i<=7;i++){totC+=dias[i].comida;totCe+=dias[i].cena;totV+=dias[i].ventas;}
-  const totCom=totC+totCe,ticket=totCom>0?totV/totCom:0;
+  let totC=0,totCe=0,totCom=0,totV=0;
+  for(let i=1;i<=7;i++){totC+=dias[i].comida;totCe+=dias[i].cena;totCom+=dias[i].total||0;totV+=dias[i].ventas;}
+  const ticket=totCom>0?totV/totCom:0;
+  
   const [a,s]=sk.split('-');
   let html=`<div class="section"><div class="section-title">${titulo} — S${s} · ${a}</div><div class="day-chart">`;
   for(let i=1;i<=7;i++){
-    const d=dias[i],tot=d.comida+d.cena;
+    const d=dias[i],tot=d.total||0;
     const hC=tot>0?Math.max(Math.round(d.comida/maxT*BAR),2):0;
     const hCe=tot>0?Math.max(Math.round(d.cena/maxT*BAR),2):0;
     const tk=d.ticket>0?Math.round(d.ticket):0;
