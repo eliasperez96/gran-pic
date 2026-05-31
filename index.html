@@ -535,7 +535,7 @@ function filaData(labelHtml,d25,d26,clsExtra){
   const avP=p25>0&&p26>0?Math.round(p26-p25):null;
   const avT=t25>0&&t26>0?Math.round(t26-t25):null;
   const dc=(pct,abs,sufijo)=>pct!==null
-    ?`<span class="${dcls(pct)}">${fmtP(pct)}<br><span style="font-size:8px;opacity:0.8">${abs>=0?'+':''}${abs}${sufijo}</span></span>`
+    ?`<span class="${dcls(pct)}">${fmtP(pct)}<br><span style="font-size:8px;opacity:0.8">${abs>=0?'+':'-'}${fmt(Math.abs(abs))}${sufijo}</span></span>`
     :em();
   return `<tr class="${clsExtra}">
     <td class="stick">${labelHtml}</td>
