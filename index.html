@@ -687,9 +687,15 @@ function renderOperativaSemanal(){
 function agruparDiario(sk){
   const dias={};
   for(let i=1;i<=7;i++) dias[i]={comida:0,cena:0,total:0,ventas:0,ticket:0};
+  const [skAño,skSem]=sk.split('-').map(Number);
   rawDiario.forEach(r=>{
-    if(semKey(r.Fecha)!==sk) return;
-    const nd=diaN(r['Día semana']);if(!nd) return;
+    const rAño=parseInt(r.Año)||0;
+    const rSem=parseInt(r.Semana)||0;
+    if(rAño!==skAño||rSem!==skSem) return;
+    const d=parseFecha(r.Fecha);
+    if(!d||isNaN(d)) return;
+    const dow=d.getDay();
+    const nd=dow===0?7:dow;
     const turno=(r.Turno||'').toString().trim().toLowerCase();
     const c=parseFloat(r.Comensales)||0,v=parseFloat(r['Ventas sin IVA'])||0,t=parseFloat(r['Ticket medio sin IVA'])||0;
     if(turno==="total"){dias[nd].ventas=v;dias[nd].ticket=t;dias[nd].total=c;}
@@ -853,7 +859,10 @@ async function cargarDatos(){
     ]);
     rawDiario=r1;rawProductos=r2;rawFacturas=r3;rawMaestro=r4;rawSemanal=r5;
     const set=new Set();
-    r1.forEach(r=>{const k=semKey(r.Fecha);if(k) set.add(k);});
+    r1.forEach(r=>{
+      const a=parseInt(r.Año),s=parseInt(r.Semana);
+      if(a&&s) set.add(`${a}-${String(s).padStart(2,'0')}`);
+    });
     semanas=Array.from(set).sort();
     buildSemFechasMap();
     const hoy=semKey(new Date().toISOString().slice(0,10));
