@@ -28,8 +28,6 @@
   .periodo-label{font-size:14px;font-weight:600;color:var(--texto);flex:1;text-align:center;}
   .section{background:var(--gris-card);border-radius:16px;padding:16px;margin-bottom:14px;border:0.5px solid var(--gris-borde);}
   .section-title{font-size:12px;font-weight:600;color:var(--texto-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;}
-
-  /* BARRAS */
   .day-chart{display:grid;grid-template-columns:repeat(7,1fr) 56px;gap:4px;align-items:end;}
   .day-col{display:flex;flex-direction:column;align-items:center;gap:2px;}
   .day-venta{font-size:8px;color:var(--texto-light);text-align:center;line-height:1.2;}
@@ -50,8 +48,6 @@
   .legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;}
   .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--texto-muted);}
   .legend-dot{width:8px;height:8px;border-radius:2px;}
-
-  /* TABLAS GENERALES */
   .data-table{width:100%;border-collapse:collapse;}
   .data-table th{font-size:10px;font-weight:600;color:var(--texto-muted);text-transform:uppercase;letter-spacing:0.3px;padding:6px 4px;border-bottom:1px solid var(--gris-borde);text-align:left;}
   .data-table th.r{text-align:right;}
@@ -69,8 +65,6 @@
   .plato-n{font-weight:500;color:var(--texto);}
   .loading{text-align:center;padding:30px;font-size:14px;color:var(--texto-muted);}
   .refresh-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:14px;background:var(--gris-card);border:0.5px solid var(--gris-borde);border-radius:14px;font-size:14px;font-weight:500;color:var(--azul-claro);cursor:pointer;margin-top:4px;}
-
-  /* OPERATIVA SEMANAL */
   .sem-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   .sem-scroll-vertical{overflow-y:auto;max-height:55vh;-webkit-overflow-scrolling:touch;}
   .sem-table{border-collapse:collapse;width:100%;}
@@ -100,8 +94,6 @@
   .d-pos{color:var(--verde);font-weight:700;}
   .d-neg{color:var(--rojo);font-weight:700;}
   .d-neu{color:var(--texto-light);}
-
-  /* MARGEN */
   .margen-table{width:100%;border-collapse:collapse;}
   .margen-table th{font-size:10px;font-weight:600;color:var(--texto-muted);text-transform:uppercase;letter-spacing:0.3px;padding:6px 4px;border-bottom:1px solid var(--gris-borde);text-align:right;white-space:nowrap;}
   .margen-table th:first-child{text-align:left;}
@@ -109,8 +101,6 @@
   .margen-table td:first-child{text-align:left;font-weight:500;font-size:11px;}
   .margen-table tr.total-row td{font-weight:700;border-top:1px solid var(--gris-borde);border-bottom:none;padding-top:8px;}
   .margen-table tr:last-child td{border-bottom:none;}
-
-  /* Barra de margen */
   .barra-wrap{position:relative;height:8px;background:#f0f0ee;border-radius:4px;overflow:hidden;min-width:60px;}
   .barra-fill{height:100%;border-radius:4px;transition:width 0.3s;}
   .barra-objetivo{position:absolute;top:0;bottom:0;width:2px;background:rgba(0,0,0,0.3);border-radius:1px;}
@@ -142,8 +132,6 @@
 </div>
 
 <div class="content">
-
-  <!-- OPERATIVA DIARIA -->
   <div class="tab-panel on" id="panel-op-diaria">
     <div class="periodo-nav">
       <button class="periodo-btn" id="op-prev">‹</button>
@@ -155,19 +143,14 @@
     <div id="chart-año"></div>
   </div>
 
-  <!-- OPERATIVA SEMANAL -->
   <div class="tab-panel" id="panel-op-semanal">
     <div class="section">
       <div class="section-title">Resumen por periodos de 13 semanas</div>
-      <div class="sem-scroll-wrap">
-        <div id="periodos-tabla"></div>
-      </div>
+      <div class="sem-scroll-wrap"><div id="periodos-tabla"></div></div>
     </div>
     <div class="section">
       <div class="section-title">Resumen por periodos de 4 semanas</div>
-      <div class="sem-scroll-wrap">
-        <div id="periodos4-tabla"></div>
-      </div>
+      <div class="sem-scroll-wrap"><div id="periodos4-tabla"></div></div>
     </div>
     <div class="section">
       <div class="section-title">Detalle semanal — 2025 vs 2026</div>
@@ -179,12 +162,10 @@
     </div>
   </div>
 
-  <!-- MARGEN -->
   <div class="tab-panel" id="panel-margen">
     <div id="margen-content"><div class="loading">Cargando...</div></div>
   </div>
 
-  <!-- TOP VENTAS -->
   <div class="tab-panel" id="panel-topventas">
     <div class="periodo-nav">
       <button class="periodo-btn" id="tv-prev">‹</button>
@@ -196,7 +177,6 @@
     <div id="top-año"></div>
   </div>
 
-  <!-- FACTURAS -->
   <div class="tab-panel" id="panel-facturas">
     <div class="periodo-nav">
       <button class="periodo-btn" id="fac-prev">‹</button>
@@ -214,12 +194,12 @@
 const API='https://script.google.com/macros/s/AKfycbxl0_5ACr0CevKCHZOkE2zWwdhVtDPGrp7V5TBG2g2UyhFhxo_ULdWesW-iFKE1hpo/exec';
 const DIAS=['L','M','X','J','V','S','D'];
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const OBJETIVO_MARGEN=70; // %
+const OBJETIVO_MARGEN=70;
 
 let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[];
 let semanas=[],opIdx=0,tvIdx=0;
 let facMes=new Date().getMonth(),facAño=new Date().getFullYear();
-let semFechasMap={}; // sk -> {1: Date, 2: Date, ..., 7: Date}
+let semFechasMap={};
 
 function fmt(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
 function fmtE(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' €';}
@@ -241,6 +221,7 @@ function margenClass(pct){
   return 'm-rojo';
 }
 
+// semKey solo se usa para la semana actual (hoy) — no para clasificar datos históricos
 function semKey(f){
   if(!f) return null;
   const s=f.toString().trim();
@@ -262,16 +243,18 @@ function lunesDeSemana(sk){
   return lunes;
 }
 
+// Construye el mapa sk -> {1:Date,...,7:Date} usando la fecha real de cada registro
 function buildSemFechasMap(){
   semFechasMap={};
   rawDiario.forEach(r=>{
-    const sk=semKey(r.Fecha);
-    if(!sk) return;
+    const rAño=parseInt(r.Año)||0;
+    const rSem=parseInt(r.Semana)||0;
+    if(!rAño||!rSem) return;
+    const sk=`${rAño}-${String(rSem).padStart(2,'0')}`;
     const d=parseFecha(r.Fecha);
     if(!d||isNaN(d)) return;
-    // Calcular día de semana desde la fecha: lunes=1 ... domingo=7
     const dow=d.getDay(); // 0=dom,1=lun,...,6=sab
-    const nd=dow===0?7:dow; // convertir a lunes=1...domingo=7
+    const nd=dow===0?7:dow; // lunes=1...domingo=7
     if(!semFechasMap[sk]) semFechasMap[sk]={};
     semFechasMap[sk][nd]=d;
   });
@@ -280,7 +263,7 @@ function buildSemFechasMap(){
 function fechaDia(sk,numDia){
   const f=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
   if(semFechasMap[sk]&&semFechasMap[sk][numDia]) return f(semFechasMap[sk][numDia]);
-  // fallback al cálculo geométrico si no hay datos
+  // fallback geométrico si no hay datos para ese día
   const lunes=lunesDeSemana(sk);
   const d=new Date(lunes);d.setDate(lunes.getDate()+(numDia-1));
   return f(d);
@@ -293,15 +276,9 @@ function rangeSemana(sk){
     if(dias.length>=2) return `${f(dias[0])}-${f(dias[dias.length-1])}`;
     if(dias.length===1) return f(dias[0]);
   }
-  // fallback
   const lunes=lunesDeSemana(sk);
   const domingo=new Date(lunes);domingo.setDate(lunes.getDate()+6);
   return `${f(lunes)}-${f(domingo)}`;
-}
-
-function diaN(s){
-  const m={lunes:1,martes:2,'miércoles':3,jueves:4,viernes:5,'sábado':6,domingo:7};
-  return m[(s||'').toLowerCase().trim()]||0;
 }
 
 function skOffset(base,p){
@@ -344,10 +321,9 @@ function buildMaestroMap(){
   return map;
 }
 
-// Coste de comida desde facturas por rango de fechas
 function costeComidaEnRango(fechaInicio,fechaFin,maestroMap){
   let coste=0;
-  const t0=fechaInicio.getTime(), t1=fechaFin.getTime();
+  const t0=fechaInicio.getTime(),t1=fechaFin.getTime();
   rawFacturas.forEach(r=>{
     const d=parseFecha(r.Fecha||r['Fecha']);
     if(!d||isNaN(d)) return;
@@ -361,27 +337,9 @@ function costeComidaEnRango(fechaInicio,fechaFin,maestroMap){
   return coste;
 }
 
-// Ventas de comida desde LK Diario por rango de fechas
-function ventasComidaEnRango(fechaInicio,fechaFin){
-  let ventas=0;
-  rawDiario.forEach(r=>{
-    const d=parseFecha(r.Fecha);
-    if(!d||isNaN(d)) return;
-    if(d<fechaInicio||d>fechaFin) return;
-    const turno=(r.Turno||'').toString().trim().toLowerCase();
-    if(turno!=='total') return;
-    ventas+=parseFloat(r['Ventas sin IVA'])||0; // usaremos comida directamente
-    // Corregimos: solo tomamos la parte de comida
-  });
-  // Usamos LK Diario para fechas, pero ventas de comida las sacamos de LK Semanal
-  // por eso usamos función separada
-  return ventas;
-}
-
-// Ventas de comida desde LK Diario (columna Comida sin IVA) por rango
 function ventasComidaDiarioEnRango(fechaInicio,fechaFin){
   let ventas=0;
-  const t0=fechaInicio.getTime(), t1=fechaFin.getTime();
+  const t0=fechaInicio.getTime(),t1=fechaFin.getTime();
   rawDiario.forEach(r=>{
     const d=parseFecha(r.Fecha);
     if(!d||isNaN(d)) return;
@@ -399,14 +357,12 @@ function filaMargen(label,ventas,coste,esTotal){
     <td>${label}</td><td class="r">${em()}</td><td class="r">${em()}</td>
     <td class="r">${em()}</td><td colspan="2">${em()}</td>
   </tr>`;
-
   const margen=ventas-coste;
   const pct=ventas>0?margen/ventas*100:0;
   const color=margenColor(pct);
   const cls=margenClass(pct);
   const barW=Math.min(Math.max(pct,0),100);
   const objPos=Math.min(OBJETIVO_MARGEN,100);
-
   return `<tr${esTotal?' class="total-row"':''}>
     <td>${label}</td>
     <td class="r">${fmtK(ventas)}</td>
@@ -424,26 +380,19 @@ function filaMargen(label,ventas,coste,esTotal){
 
 function renderMargen(){
   const maestroMap=buildMaestroMap();
-  const semActualStr=semKey(new Date().toISOString().slice(0,10))||'2026-01';
+  const semActualStr=semanas[opIdx]||'2026-01';
   const semActual=parseInt(semActualStr.split('-')[1]);
   const añoActual=parseInt(semActualStr.split('-')[0]);
-
   let html='';
+  const cabecera=`<table class="margen-table"><thead><tr>
+    <th>Periodo</th><th class="r">Ventas</th><th class="r">Coste</th>
+    <th class="r">Margen €</th><th class="r">Margen %</th>
+    <th style="min-width:70px;padding-left:6px"><span class="obj-line"></span>obj.${OBJETIVO_MARGEN}%</th>
+  </tr></thead><tbody>`;
 
-  const cabecera=`<table class="margen-table">
-    <thead><tr>
-      <th>Periodo</th>
-      <th class="r">Ventas</th>
-      <th class="r">Coste</th>
-      <th class="r">Margen €</th>
-      <th class="r">Margen %</th>
-      <th style="min-width:70px;padding-left:6px"><span class="obj-line"></span>obj.${OBJETIVO_MARGEN}%</th>
-    </tr></thead><tbody>`;
-
-  // ── 1. SEMANAL ──
+  // 1. SEMANAL
   {
     let rows='',totV=0,totC=0;
-    // Últimas 8 semanas completadas
     const desde=Math.max(1,semActual-8);
     for(let s=semActual-1;s>=desde;s--){
       const sk=`${añoActual}-${String(s).padStart(2,'0')}`;
@@ -454,25 +403,21 @@ function renderMargen(){
       totV+=v;totC+=c;
       rows+=filaMargen(`S${String(s).padStart(2,'0')}`,v,c,false);
     }
-    html+=`<div class="section">
-      <div class="section-title">Semanal — últimas 8 semanas</div>
+    html+=`<div class="section"><div class="section-title">Semanal — últimas 8 semanas</div>
       <div class="margen-subtitulo"><span class="obj-line"></span>Objetivo margen comida: ${OBJETIVO_MARGEN}%</div>
-      ${cabecera}${rows}${filaMargen('Total',totV,totC,true)}</tbody></table>
-    </div>`;
+      ${cabecera}${rows}${filaMargen('Total',totV,totC,true)}</tbody></table></div>`;
   }
 
-  // ── 2. PERIODOS DE 4 SEMANAS ──
+  // 2. PERIODOS DE 4 SEMANAS
   {
     let rows='',totV=0,totC=0;
-    // S1-S4, S5-S8... hasta semana actual-1
     const grupos=[];
     for(let s=1;s<=52;s+=4) grupos.push({desde:s,hasta:Math.min(s+3,53)});
     grupos.forEach(g=>{
-      if(g.desde>semActual-1) return; // futuro
+      if(g.desde>semActual-1) return;
       const hastaEfectivo=Math.min(g.hasta,semActual-1);
-      const skDesde=`${añoActual}-${String(g.desde).padStart(2,'0')}`;
+      const lunes=lunesDeSemana(`${añoActual}-${String(g.desde).padStart(2,'0')}`);
       const skHasta=`${añoActual}-${String(hastaEfectivo).padStart(2,'0')}`;
-      const lunes=lunesDeSemana(skDesde);
       const domingoHasta=new Date(lunesDeSemana(skHasta));domingoHasta.setDate(domingoHasta.getDate()+6);
       const v=ventasComidaDiarioEnRango(lunes,domingoHasta);
       const c=costeComidaEnRango(lunes,domingoHasta,maestroMap);
@@ -480,36 +425,31 @@ function renderMargen(){
       const label=g.desde===hastaEfectivo?`S${String(g.desde).padStart(2,'0')}`:`S${String(g.desde).padStart(2,'0')}-S${String(hastaEfectivo).padStart(2,'0')}`;
       rows+=filaMargen(label,v,c,false);
     });
-    html+=`<div class="section">
-      <div class="section-title">Periodos de 4 semanas</div>
-      ${cabecera}${rows}${filaMargen('Total',totV,totC,true)}</tbody></table>
-    </div>`;
+    html+=`<div class="section"><div class="section-title">Periodos de 4 semanas</div>
+      ${cabecera}${rows}${filaMargen('Total',totV,totC,true)}</tbody></table></div>`;
   }
 
-  // ── 3. PERIODOS DE 13 SEMANAS ──
+  // 3. PERIODOS DE 13 SEMANAS
   {
     const ps=[{l:'P13',d:1,h:13},{l:'P26',d:14,h:26},{l:'P39',d:27,h:39},{l:'P53',d:40,h:53}];
     let rows='',totV=0,totC=0;
     ps.forEach(p=>{
-      if(p.desde>semActual-1) return;
-      const hastaEfectivo=Math.min(p.hasta,semActual-1);
-      const skDesde=`${añoActual}-${String(p.desde).padStart(2,'0')}`;
-      const skHasta=`${añoActual}-${String(hastaEfectivo).padStart(2,'0')}`;
-      const lunes=lunesDeSemana(skDesde);
-      const domingoHasta=new Date(lunesDeSemana(skHasta));domingoHasta.setDate(domingoHasta.getDate()+6);
+      if(p.d>semActual-1) return;
+      const hastaEfectivo=Math.min(p.h,semActual-1);
+      const lunes=lunesDeSemana(`${añoActual}-${String(p.d).padStart(2,'0')}`);
+      const domingoHasta=new Date(lunesDeSemana(`${añoActual}-${String(hastaEfectivo).padStart(2,'0')}`));
+      domingoHasta.setDate(domingoHasta.getDate()+6);
       const v=ventasComidaDiarioEnRango(lunes,domingoHasta);
       const c=costeComidaEnRango(lunes,domingoHasta,maestroMap);
       totV+=v;totC+=c;
-      const esCurso=semActual>p.desde&&semActual<=p.hasta;
+      const esCurso=semActual>p.d&&semActual<=p.h;
       rows+=filaMargen(`${p.l}${esCurso?' *':''}`,v,c,false);
     });
-    html+=`<div class="section">
-      <div class="section-title">Periodos de 13 semanas <span style="font-size:10px;font-weight:400">* periodo en curso</span></div>
-      ${cabecera}${rows}${filaMargen('Total',totV,totC,true)}</tbody></table>
-    </div>`;
+    html+=`<div class="section"><div class="section-title">Periodos de 13 semanas <span style="font-size:10px;font-weight:400">* periodo en curso</span></div>
+      ${cabecera}${rows}${filaMargen('Total',totV,totC,true)}</tbody></table></div>`;
   }
 
-  // ── 4. MENSUAL ──
+  // 4. MENSUAL
   {
     const mesHoy=new Date().getMonth();
     let rows='',totV=0,totC=0;
@@ -521,15 +461,18 @@ function renderMargen(){
       totV+=v;totC+=c;
       rows+=filaMargen(MESES[m].slice(0,3),v,c,false);
     }
-    html+=`<div class="section">
-      <div class="section-title">Mensual ${añoActual}</div>
-      ${cabecera}${rows}${filaMargen('Total',totV,totC,true)}</tbody></table>
-    </div>`;
+    html+=`<div class="section"><div class="section-title">Mensual ${añoActual}</div>
+      ${cabecera}${rows}${filaMargen('Total',totV,totC,true)}</tbody></table></div>`;
   }
 
-  // ── 5. TRIMESTRAL ──
+  // 5. TRIMESTRAL
   {
-    const trimestres=[{l:'Q1',d:new Date(añoActual,0,1),h:new Date(añoActual,2,31,23,59,59)},{l:'Q2',d:new Date(añoActual,3,1),h:new Date(añoActual,5,30,23,59,59)},{l:'Q3',d:new Date(añoActual,6,1),h:new Date(añoActual,8,30,23,59,59)},{l:'Q4',d:new Date(añoActual,9,1),h:new Date(añoActual,11,31,23,59,59)}];
+    const trimestres=[
+      {l:'Q1',d:new Date(añoActual,0,1),h:new Date(añoActual,2,31,23,59,59)},
+      {l:'Q2',d:new Date(añoActual,3,1),h:new Date(añoActual,5,30,23,59,59)},
+      {l:'Q3',d:new Date(añoActual,6,1),h:new Date(añoActual,8,30,23,59,59)},
+      {l:'Q4',d:new Date(añoActual,9,1),h:new Date(añoActual,11,31,23,59,59)}
+    ];
     let rows='',totV=0,totC=0;
     const hoy=new Date();
     trimestres.forEach(t=>{
@@ -539,16 +482,15 @@ function renderMargen(){
       totV+=v;totC+=c;
       rows+=filaMargen(t.l,v,c,false);
     });
-    html+=`<div class="section">
-      <div class="section-title">Trimestral ${añoActual}</div>
-      ${cabecera}${rows}${filaMargen('Total',totV,totC,true)}</tbody></table>
-    </div>`;
+    html+=`<div class="section"><div class="section-title">Trimestral ${añoActual}</div>
+      ${cabecera}${rows}${filaMargen('Total',totV,totC,true)}</tbody></table></div>`;
   }
 
   document.getElementById('margen-content').innerHTML=html;
 }
 
 // ── OPERATIVA SEMANAL ─────────────────────────────────────────────────────────
+
 function buildSemanalData(){
   const data={};
   rawSemanal.forEach(r=>{
@@ -609,7 +551,7 @@ function filaData(labelHtml,d25,d26,clsExtra){
 
 function renderOperativaSemanal(){
   const data=buildSemanalData();
-  const semActualStr=semKey(new Date().toISOString().slice(0,10))||'2026-01';
+  const semActualStr=semanas[opIdx]||'2026-01';
   const semActual=parseInt(semActualStr.split('-')[1]);
   const semAnterior=semActual-1;
   const periodos=[{label:'P13',desde:1,hasta:13},{label:'P26',desde:14,hasta:26},{label:'P39',desde:27,hasta:39},{label:'P53',desde:40,hasta:53}];
@@ -635,12 +577,11 @@ function renderOperativaSemanal(){
   htmlPer+=`</tbody></table>`;
   document.getElementById('periodos-tabla').innerHTML=htmlPer;
 
-  // ── TABLA PERIODOS DE 4 SEMANAS ──
   let htmlPer4=`<table class="sem-table">${headersTabla('Periodo')}<tbody>`;
   let totV25_4=0,totT25_4=0,totV26_4=0,totT26_4=0;
   for(let s=1;s<=53;s+=4){
-    const desde=s, hasta=Math.min(s+3,53);
-    if(desde>semAnterior) break; // futuro completo
+    const desde=s,hasta=Math.min(s+3,53);
+    if(desde>semAnterior) break;
     const hastaEfectivo=Math.min(hasta,semAnterior);
     const esCurso=semActual>=desde&&semActual<=hasta;
     const esFuturo=desde>semActual;
@@ -648,25 +589,21 @@ function renderOperativaSemanal(){
     const d26=esFuturo?null:sumarRango(data,desde,hastaEfectivo,2026);
     if(d25){totV25_4+=d25.v;totT25_4+=d25.t;}
     if(d26){totV26_4+=d26.v;totT26_4+=d26.t;}
-    const label=desde===hastaEfectivo
-      ?`S${String(desde).padStart(2,'0')}`
-      :`S${String(desde).padStart(2,'0')}-S${String(hastaEfectivo).padStart(2,'0')}`;
+    const label=desde===hastaEfectivo?`S${String(desde).padStart(2,'0')}`:`S${String(desde).padStart(2,'0')}-S${String(hastaEfectivo).padStart(2,'0')}`;
     const nota=esCurso?`<span style="font-size:8px;opacity:0.65;display:block">hasta S${semAnterior}</span>`:'';
     htmlPer4+=filaData(`${label}${nota}`,d25,d26,esCurso?'sem-current':'');
   }
-  const totP25_4=totV25_4>0?totT25_4/totV25_4:0, totP26_4=totV26_4>0?totT26_4/totV26_4:0;
+  const totP25_4=totV25_4>0?totT25_4/totV25_4:0,totP26_4=totV26_4>0?totT26_4/totV26_4:0;
   htmlPer4+=filaData('Total',
     totV25_4>0?{v:totV25_4,p:totP25_4,t:totT25_4}:null,
     totV26_4>0?{v:totV26_4,p:totP26_4,t:totT26_4}:null,
-    'total-sem'
-  );
+    'total-sem');
   htmlPer4+=`</tbody></table>`;
   document.getElementById('periodos4-tabla').innerHTML=htmlPer4;
 
   let html=`<table class="sem-table">${headersTabla('Sem')}<tbody>`;
   let totV25=0,totT25=0,totV26=0,totT26=0;
-  const periodosDef=[{l:'P13',d:1,h:13},{l:'P26',d:14,h:26},{l:'P39',d:27,h:39},{l:'P53',d:40,h:53}];
-  periodosDef.forEach(per=>{
+  [{l:'P13',d:1,h:13},{l:'P26',d:14,h:26},{l:'P39',d:27,h:39},{l:'P53',d:40,h:53}].forEach(per=>{
     html+=`<tr class="group-header"><td colspan="10">${per.l} — S${per.d} a S${per.h}</td></tr>`;
     for(let s=per.d;s<=per.h;s++){
       const d25=data[s]&&data[s][2025]&&data[s][2025].v>0?data[s][2025]:null;
@@ -684,6 +621,8 @@ function renderOperativaSemanal(){
 }
 
 // ── OPERATIVA DIARIA ──────────────────────────────────────────────────────────
+
+// Usa Año y Semana directamente desde los datos (criterio Apps Script)
 function agruparDiario(sk){
   const dias={};
   for(let i=1;i<=7;i++) dias[i]={comida:0,cena:0,total:0,ventas:0,ticket:0};
@@ -695,10 +634,10 @@ function agruparDiario(sk){
     const d=parseFecha(r.Fecha);
     if(!d||isNaN(d)) return;
     const dow=d.getDay();
-    const nd=dow===0?7:dow;
+    const nd=dow===0?7:dow; // lunes=1...domingo=7
     const turno=(r.Turno||'').toString().trim().toLowerCase();
     const c=parseFloat(r.Comensales)||0,v=parseFloat(r['Ventas sin IVA'])||0,t=parseFloat(r['Ticket medio sin IVA'])||0;
-    if(turno==="total"){dias[nd].ventas=v;dias[nd].ticket=t;dias[nd].total=c;}
+    if(turno==='total'){dias[nd].ventas=v;dias[nd].ticket=t;dias[nd].total=c;}
     if(turno.includes('almuerzo')) dias[nd].comida=c;
     if(turno.includes('cena'))     dias[nd].cena=c;
   });
@@ -729,7 +668,6 @@ function renderGrafico(sk,titulo,containerId){
   let totC=0,totCe=0,totCom=0,totV=0;
   for(let i=1;i<=7;i++){totC+=dias[i].comida;totCe+=dias[i].cena;totCom+=dias[i].total||0;totV+=dias[i].ventas;}
   const ticket=totCom>0?totV/totCom:0;
-  
   const [a,s]=sk.split('-');
   let html=`<div class="section"><div class="section-title">${titulo} — S${s} · ${a}</div><div class="day-chart">`;
   for(let i=1;i<=7;i++){
@@ -858,21 +796,30 @@ async function cargarDatos(){
       fetch(`${API}?sheet=LK%20Semanal`).then(r=>r.json()),
     ]);
     rawDiario=r1;rawProductos=r2;rawFacturas=r3;rawMaestro=r4;rawSemanal=r5;
+
+    // Construir lista de semanas desde columnas Año/Semana (criterio Apps Script)
     const set=new Set();
     r1.forEach(r=>{
       const a=parseInt(r.Año),s=parseInt(r.Semana);
       if(a&&s) set.add(`${a}-${String(s).padStart(2,'0')}`);
     });
     semanas=Array.from(set).sort();
+
+    // Construir mapa de fechas reales por semana
     buildSemFechasMap();
-    const hoy=semKey(new Date().toISOString().slice(0,10));
+
+    // Detectar semana actual: última semana que tenga algún día <= hoy
+    const hoyMs=new Date().getTime();
+    const hoy=semanas.slice().reverse().find(sk=>{
+      const fechas=semFechasMap[sk];
+      if(!fechas) return false;
+      return Math.min(...Object.values(fechas).map(d=>d.getTime()))<=hoyMs;
+    })||semanas[semanas.length-1];
+
     opIdx=semanas.indexOf(hoy);
-    if(opIdx<0){
-      semanas.push(hoy);
-      semanas.sort();
-      opIdx=semanas.indexOf(hoy);
-    }
+    if(opIdx<0) opIdx=semanas.length-1;
     tvIdx=opIdx;
+
     const ahora=new Date();
     document.getElementById('last-update').textContent=`${ahora.getHours()}:${String(ahora.getMinutes()).padStart(2,'0')}`;
     renderOperativaDiaria(opIdx);
