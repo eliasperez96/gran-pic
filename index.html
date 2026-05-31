@@ -219,6 +219,7 @@ const OBJETIVO_MARGEN=70; // %
 let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[];
 let semanas=[],opIdx=0,tvIdx=0;
 let facMes=new Date().getMonth(),facAño=new Date().getFullYear();
+let semFechasMap={}; // sk -> {1: Date, 2: Date, ..., 7: Date}
 
 function fmt(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
 function fmtE(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' €';}
@@ -261,16 +262,39 @@ function lunesDeSemana(sk){
   return lunes;
 }
 
+function buildSemFechasMap(){
+  semFechasMap={};
+  rawDiario.forEach(r=>{
+    const sk=semKey(r.Fecha);
+    if(!sk) return;
+    const nd=diaN(r['Día semana']);
+    if(!nd) return;
+    const d=parseFecha(r.Fecha);
+    if(!d||isNaN(d)) return;
+    if(!semFechasMap[sk]) semFechasMap[sk]={};
+    semFechasMap[sk][nd]=d;
+  });
+}
+
 function fechaDia(sk,numDia){
+  const f=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
+  if(semFechasMap[sk]&&semFechasMap[sk][numDia]) return f(semFechasMap[sk][numDia]);
+  // fallback al cálculo geométrico si no hay datos
   const lunes=lunesDeSemana(sk);
   const d=new Date(lunes);d.setDate(lunes.getDate()+(numDia-1));
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
+  return f(d);
 }
 
 function rangeSemana(sk){
+  const f=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
+  if(semFechasMap[sk]){
+    const dias=Object.values(semFechasMap[sk]).sort((a,b)=>a-b);
+    if(dias.length>=2) return `${f(dias[0])}-${f(dias[dias.length-1])}`;
+    if(dias.length===1) return f(dias[0]);
+  }
+  // fallback
   const lunes=lunesDeSemana(sk);
   const domingo=new Date(lunes);domingo.setDate(lunes.getDate()+6);
-  const f=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
   return `${f(lunes)}-${f(domingo)}`;
 }
 
@@ -830,6 +854,7 @@ async function cargarDatos(){
     const set=new Set();
     r1.forEach(r=>{const k=semKey(r.Fecha);if(k) set.add(k);});
     semanas=Array.from(set).sort();
+    buildSemFechasMap();
     const hoy=semKey(new Date().toISOString().slice(0,10));
     opIdx=semanas.indexOf(hoy);
     if(opIdx<0){
