@@ -263,7 +263,18 @@ function buildSemFechasMap(){
 function fechaDia(sk,numDia){
   const f=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
   if(semFechasMap[sk]&&semFechasMap[sk][numDia]) return f(semFechasMap[sk][numDia]);
-  // fallback geométrico si no hay datos para ese día
+  // Fallback: derivar desde cualquier fecha real de esa semana
+  if(semFechasMap[sk]){
+    const entrada=Object.entries(semFechasMap[sk])[0]; // [ndReal, dateReal]
+    if(entrada){
+      const ndReal=parseInt(entrada[0]);
+      const dReal=entrada[1];
+      const d=new Date(dReal);
+      d.setDate(dReal.getDate()+(numDia-ndReal));
+      return f(d);
+    }
+  }
+  // Fallback geométrico solo si no hay ningún dato de esa semana
   const lunes=lunesDeSemana(sk);
   const d=new Date(lunes);d.setDate(lunes.getDate()+(numDia-1));
   return f(d);
