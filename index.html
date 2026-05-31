@@ -515,14 +515,12 @@ function headersTabla(labelCol){
   return `<thead>
     <tr>
       <th class="h-per stick" rowspan="2" style="min-width:52px">${labelCol}</th>
-      <th class="h-25 h-group" colspan="3">2025</th>
       <th class="h-26 h-group" colspan="3">2026</th>
       <th class="h-d h-group" colspan="3">Δ '26 vs '25</th>
     </tr>
     <tr>
-      <th class="h-25">Comen.</th><th class="h-25">€/Com.</th><th class="h-25">k€</th>
       <th class="h-26">Comen.</th><th class="h-26">€/Com.</th><th class="h-26">k€</th>
-      <th class="h-d">ΔV%</th><th class="h-d">ΔP%</th><th class="h-d">ΔT%</th>
+      <th class="h-d">ΔV</th><th class="h-d">ΔP</th><th class="h-d">ΔT</th>
     </tr>
   </thead>`;
 }
@@ -533,16 +531,20 @@ function filaData(labelHtml,d25,d26,clsExtra){
   const dv=v25>0&&v26>0?(v26-v25)/v25:null;
   const dp=p25>0&&p26>0?(p26-p25)/p25:null;
   const dt=t25>0&&t26>0?(t26-t25)/t25:null;
-  const dc=(v)=>v!==null?`<span class="${dcls(v)}">${fmtP(v)}</span>`:em();
+  const avV=v25>0&&v26>0?Math.round(v26-v25):null;
+  const avP=p25>0&&p26>0?Math.round(p26-p25):null;
+  const avT=t25>0&&t26>0?Math.round(t26-t25):null;
+  const dc=(pct,abs,sufijo)=>pct!==null
+    ?`<span class="${dcls(pct)}">${fmtP(pct)}<br><span style="font-size:8px;opacity:0.8">${abs>=0?'+':''}${abs}${sufijo}</span></span>`
+    :em();
   return `<tr class="${clsExtra}">
     <td class="stick">${labelHtml}</td>
-    <td>${v25>0?`<span class="val-25">${fmt(v25)}</span>`:em()}</td>
-    <td>${p25>0?`<span class="val-25">${fmtPint(p25)}</span>`:em()}</td>
-    <td>${t25>0?`<span class="val-25">${fmtK(t25)}</span>`:em()}</td>
     <td>${v26>0?`<span class="val-26">${fmt(v26)}</span>`:em()}</td>
     <td>${p26>0?`<span class="val-26">${fmtPint(p26)}</span>`:em()}</td>
     <td>${t26>0?`<span class="val-26">${fmtK(t26)}</span>`:em()}</td>
-    <td>${dc(dv)}</td><td>${dc(dp)}</td><td>${dc(dt)}</td>
+    <td>${dc(dv,avV,'')}</td>
+    <td>${dc(dp,avP,'€')}</td>
+    <td>${dc(dt,avT,'k€')}</td>
   </tr>`;
 }
 
@@ -601,7 +603,7 @@ function renderOperativaSemanal(){
   let html=`<table class="sem-table">${headersTabla('Sem')}<tbody>`;
   let totV25=0,totT25=0,totV26=0,totT26=0;
   [{l:'P13',d:1,h:13},{l:'P26',d:14,h:26},{l:'P39',d:27,h:39},{l:'P53',d:40,h:53}].forEach(per=>{
-    html+=`<tr class="group-header"><td colspan="10">${per.l} — S${per.d} a S${per.h}</td></tr>`;
+    html+=`<tr class="group-header"><td colspan="7">${per.l} — S${per.d} a S${per.h}</td></tr>`;
     for(let s=per.d;s<=per.h;s++){
       const d25=data[s]&&data[s][2025]&&data[s][2025].v>0?data[s][2025]:null;
       const d26=data[s]&&data[s][2026]&&data[s][2026].v>0?data[s][2026]:null;
