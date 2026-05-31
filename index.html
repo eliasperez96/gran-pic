@@ -267,10 +267,11 @@ function buildSemFechasMap(){
   rawDiario.forEach(r=>{
     const sk=semKey(r.Fecha);
     if(!sk) return;
-    const nd=diaN(r['Día semana']);
-    if(!nd) return;
     const d=parseFecha(r.Fecha);
     if(!d||isNaN(d)) return;
+    // Calcular día de semana desde la fecha: lunes=1 ... domingo=7
+    const dow=d.getDay(); // 0=dom,1=lun,...,6=sab
+    const nd=dow===0?7:dow; // convertir a lunes=1...domingo=7
     if(!semFechasMap[sk]) semFechasMap[sk]={};
     semFechasMap[sk][nd]=d;
   });
