@@ -128,6 +128,7 @@
     <button class="main-tab" data-tab="margen">Margen</button>
     <button class="main-tab" data-tab="topventas">Top ventas</button>
     <button class="main-tab" data-tab="facturas">Facturas</button>
+    <button class="main-tab" data-tab="objetivos">Objetivos</button>
   </div>
 </div>
 
@@ -186,7 +187,50 @@
     <div id="facturas-resumen"></div>
     <div id="facturas-detalle"></div>
   </div>
-
+<!-- OBJETIVOS -->
+  <div class="tab-panel" id="panel-objetivos">
+    <div class="section">
+      <div class="section-title">Parámetros</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
+        <div>
+          <div style="font-size:10px;color:var(--texto-muted);margin-bottom:4px">Personal mensual</div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <input id="obj-personal" type="number" style="width:100%;padding:6px 8px;border:0.5px solid var(--gris-borde);border-radius:8px;font-size:13px;background:var(--gris-fondo)" placeholder="0">
+            <span style="font-size:11px;color:var(--texto-muted)">€</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--texto-muted);margin-bottom:4px">Alquiler mensual</div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <input id="obj-alquiler" type="number" style="width:100%;padding:6px 8px;border:0.5px solid var(--gris-borde);border-radius:8px;font-size:13px;background:var(--gris-fondo)" placeholder="0">
+            <span style="font-size:11px;color:var(--texto-muted)">€</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--texto-muted);margin-bottom:4px">Suministros mensual</div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <input id="obj-suministros" type="number" style="width:100%;padding:6px 8px;border:0.5px solid var(--gris-borde);border-radius:8px;font-size:13px;background:var(--gris-fondo)" placeholder="0">
+            <span style="font-size:11px;color:var(--texto-muted)">€</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--texto-muted);margin-bottom:4px">Margen bruto obj.</div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <input id="obj-margen" type="number" min="0" max="100" style="width:100%;padding:6px 8px;border:0.5px solid var(--gris-borde);border-radius:8px;font-size:13px;background:var(--gris-fondo)" placeholder="68">
+            <span style="font-size:11px;color:var(--texto-muted)">%</span>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <div style="font-size:10px;color:var(--texto-muted);margin-bottom:4px">Ticket medio — últimas <span id="obj-nsem-label">4</span> semanas</div>
+        <input id="obj-nsemanas" type="range" min="1" max="12" value="4" style="width:100%;accent-color:var(--azul-claro)">
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--texto-light)"><span>1</span><span>12</span></div>
+      </div>
+      <button onclick="renderObjetivos()" style="margin-top:12px;width:100%;padding:10px;background:var(--azul-claro);color:white;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Calcular</button>
+    </div>
+    <div id="obj-resultado"></div>
+  </div>
+  
   <button class="refresh-btn" id="refresh-btn">↻ Actualizar datos</button>
 </div>
 
@@ -780,6 +824,163 @@ function renderTopVentas(idx){
   renderTop(skOffset(base,'año'),'Año anterior','top-año');
 }
 
+// ── OBJETIVOS ─────────────────────────────────────────────────────────────────
+
+function renderObjetivos(){
+  // Leer inputs
+  const personal    = parseFloat(document.getElementById('obj-personal').value)||0;
+  const alquiler    = parseFloat(document.getElementById('obj-alquiler').value)||0;
+  const suministros = parseFloat(document.getElementById('obj-suministros').value)||0;
+  const margenPct   = parseFloat(document.getElementById('obj-margen').value)||68;
+  const nSem        = parseInt(document.getElementById('obj-nsemanas').value)||4;
+
+  document.getElementById('obj-nsem-label').textContent = nSem;
+
+  // Costes fijos semanales
+  const costosMensuales = personal + alquiler + suministros;
+  const costosSemana    = costosMensuales / 4.33;
+
+  // Ticket medio de las últimas nSem semanas completadas
+  const semActual = semanas[opIdx];
+  const idxActual = semanas.indexOf(semActual);
+  let totalVentas=0, totalComensales=0;
+  for(let i=Math.max(0,idxActual-nSem); i<idxActual; i++){
+    const sk=semanas[i];
+    const [skA,skS]=sk.split('-').map(Number);
+    rawSemanal.forEach(r=>{
+      const a=parseInt(r.Año||r['Año'])||0;
+      const s=parseInt(r.Semana||r['Semana'])||0;
+      if(a!==skA||s!==skS) return;
+      totalVentas     += parseFloat(r['Ventas sin IVA']||r.Ventas)||0;
+      totalComensales += parseFloat(r['Comensales totales']||r.Comensales)||0;
+    });
+  }
+  const ticketMedio = totalComensales>0 ? totalVentas/totalComensales : 0;
+
+  // Mix diario del año anterior (misma semana)
+  const skAñoAnt = skOffset(semActual,'año');
+  const [aaA,aaS]=skAñoAnt.split('-').map(Number);
+  const mixDias={1:0,2:0,3:0,4:0,5:0,6:0,7:0};
+  let mixTotal=0;
+  rawSemanal.forEach(r=>{}); // no usamos semanal para mix diario
+  // Usamos rawDiario para el mix del año anterior
+  const diasAnt={1:0,2:0,3:0,4:0,5:0,6:0,7:0};
+  rawDiario.forEach(r=>{
+    const a=parseInt(r.Año)||0, s=parseInt(r.Semana)||0;
+    if(a!==aaA||s!==aaS) return;
+    const turno=(r.Turno||'').toLowerCase();
+    if(turno!=='total') return;
+    const d=parseFecha(r.Fecha);
+    if(!d) return;
+    const dow=d.getDay();
+    const nd=dow===0?7:dow;
+    diasAnt[nd]+=parseFloat(r.Comensales)||0;
+    mixTotal+=parseFloat(r.Comensales)||0;
+  });
+
+  // Escenarios: comensales necesarios
+  // Comensales = (EBITDA + CostsFijos) / (TicketMedio × MargenBruto)
+  const margen = margenPct/100;
+  const escenarios = [
+    {label:'Breakeven', pct:0,  color:'var(--texto-muted)'},
+    {label:'EBITDA 20%',pct:0.20,color:'var(--verde)'},
+    {label:'EBITDA 30%',pct:0.30,color:'var(--azul-claro)'},
+  ];
+
+  if(ticketMedio<=0){
+    document.getElementById('obj-resultado').innerHTML=`<div class="section" style="text-align:center;color:var(--texto-muted);font-size:13px">Sin datos de ticket medio para las últimas ${nSem} semanas</div>`;
+    return;
+  }
+
+  // Resumen parámetros
+  let html=`<div class="section">
+    <div class="section-title">Parámetros calculados</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:var(--gris-fondo);border-radius:10px;padding:10px">
+        <div style="font-size:10px;color:var(--texto-muted)">Costes fijos/semana</div>
+        <div style="font-size:16px;font-weight:700;margin-top:2px">${fmtD(costosSemana)}</div>
+      </div>
+      <div style="background:var(--gris-fondo);border-radius:10px;padding:10px">
+        <div style="font-size:10px;color:var(--texto-muted)">Ticket medio (${nSem}s)</div>
+        <div style="font-size:16px;font-weight:700;margin-top:2px">${fmtD(ticketMedio)}</div>
+      </div>
+      <div style="background:var(--gris-fondo);border-radius:10px;padding:10px">
+        <div style="font-size:10px;color:var(--texto-muted)">Margen bruto obj.</div>
+        <div style="font-size:16px;font-weight:700;margin-top:2px">${margenPct}%</div>
+      </div>
+      <div style="background:var(--gris-fondo);border-radius:10px;padding:10px">
+        <div style="font-size:10px;color:var(--texto-muted)">Semana referencia mix</div>
+        <div style="font-size:13px;font-weight:700;margin-top:2px">${skAñoAnt}</div>
+      </div>
+    </div>
+  </div>`;
+
+  // Tabla escenarios + distribución diaria
+  const DIAS_LABEL=['L','M','X','J','V','S','D'];
+  escenarios.forEach(esc=>{
+    // Ventas necesarias para cubrir costes + EBITDA objetivo
+    // EBITDA% = EBITDA/Ventas → EBITDA = Ventas × pct
+    // Ventas × margen - costosSemana = Ventas × pct
+    // Ventas × (margen - pct) = costosSemana
+    // Ventas = costosSemana / (margen - pct)
+    if(margen <= esc.pct){
+      html+=`<div class="section"><div class="section-title" style="color:${esc.color}">${esc.label}</div><div style="color:var(--rojo);font-size:12px">El margen bruto (${margenPct}%) no es suficiente para alcanzar este objetivo</div></div>`;
+      return;
+    }
+    const ventasNec = costosSemana / (margen - esc.pct);
+    const comensalesNec = ventasNec / ticketMedio;
+    const ebitda = ventasNec * esc.pct;
+
+    html+=`<div class="section">
+      <div class="section-title" style="color:${esc.color}">${esc.label}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="background:var(--gris-fondo);border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:9px;color:var(--texto-muted)">Comensales</div>
+          <div style="font-size:18px;font-weight:700;color:${esc.color}">${fmt(Math.ceil(comensalesNec))}</div>
+        </div>
+        <div style="background:var(--gris-fondo);border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:9px;color:var(--texto-muted)">Ventas</div>
+          <div style="font-size:14px;font-weight:700">${fmtK(ventasNec)}</div>
+        </div>
+        <div style="background:var(--gris-fondo);border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:9px;color:var(--texto-muted)">EBITDA</div>
+          <div style="font-size:14px;font-weight:700">${esc.pct>0?fmtK(ebitda):'—'}</div>
+        </div>
+      </div>`;
+
+    // Distribución diaria
+    if(mixTotal>0){
+      html+=`<div style="font-size:10px;color:var(--texto-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.3px">Distribución diaria (mix S${aaS}·${aaA})</div>`;
+      html+=`<table style="width:100%;border-collapse:collapse">
+        <thead><tr>`;
+      for(let d=1;d<=7;d++) html+=`<th style="font-size:9px;font-weight:600;color:var(--texto-muted);padding:3px;text-align:center">${DIAS_LABEL[d-1]}</th>`;
+      html+=`</tr></thead><tbody><tr>`;
+      for(let d=1;d<=7;d++){
+        const pctDia = mixTotal>0 ? diasAnt[d]/mixTotal : 1/7;
+        const comDia = Math.ceil(comensalesNec * pctDia);
+        html+=`<td style="text-align:center;padding:4px 2px">
+          <div style="font-size:13px;font-weight:700;color:${esc.color}">${comDia>0?comDia:'—'}</div>
+          <div style="font-size:8px;color:var(--texto-light)">${comDia>0?Math.round(pctDia*100)+'%':''}</div>
+        </td>`;
+      }
+      html+=`</tr></tbody></table>`;
+    } else {
+      html+=`<div style="font-size:11px;color:var(--texto-light)">Sin datos del año anterior para distribuir por día</div>`;
+    }
+    html+=`</div>`;
+  });
+
+  document.getElementById('obj-resultado').innerHTML=html;
+}
+
+// Actualizar label del slider en tiempo real
+document.addEventListener('DOMContentLoaded',()=>{
+  const slider=document.getElementById('obj-nsemanas');
+  if(slider) slider.addEventListener('input',()=>{
+    document.getElementById('obj-nsem-label').textContent=slider.value;
+  });
+});
+  
 async function cargarDatos(){
   document.getElementById('last-update').textContent='Actualizando...';
   try {
