@@ -565,7 +565,8 @@ function headersTabla(labelCol){
   </thead>`;
 }
 
-function filaData(labelHtml,d25,d26,clsExtra){
+function filaData(labelHtml,d25,d26,clsExtra,fmtVentas){
+  if(!fmtVentas) fmtVentas=fmtK;
   const v25=d25?d25.v:0,p25=d25?d25.p:0,t25=d25?d25.t:0;
   const v26=d26?d26.v:0,p26=d26?d26.p:0,t26=d26?d26.t:0;
   const dv=v25>0&&v26>0?(v26-v25)/v25:null;
@@ -581,7 +582,7 @@ function filaData(labelHtml,d25,d26,clsExtra){
     <td class="stick">${labelHtml}</td>
     <td>${v26>0?`<span class="val-26">${fmt(v26)}</span>`:em()}</td>
     <td>${p26>0?`<span class="val-26">${fmtPint(p26)}</span>`:em()}</td>
-    <td>${t26>0?`<span class="val-26">${fmtK(t26)}</span>`:em()}</td>
+    <td>${t26>0?`<span class="val-26">${fmtVentas(t26)}</span>`:em()}</td>
     <td>${dc(dv,avV,'')}</td>
     <td>${dc(dp,avP,'€')}</td>
     <td>${dc(dt,avT,'€')}</td>
@@ -650,11 +651,11 @@ function renderOperativaSemanal(){
       const isCurrent=s===semActual;
       if(d25){totV25+=d25.v;totT25+=d25.t;}
       if(d26){totV26+=d26.v;totT26+=d26.t;}
-      html+=filaData(`S${String(s).padStart(2,'0')}`,d25,d26,isCurrent?'sem-current':'');
+      html+=filaData(`S${String(s).padStart(2,'0')}`,d25,d26,isCurrent?'sem-current':'',fmtE);
     }
   });
   const totP25=totV25>0?totT25/totV25:0,totP26=totV26>0?totT26/totV26:0;
-  html+=filaData('Total',totV25>0?{v:totV25,p:totP25,t:totT25}:null,totV26>0?{v:totV26,p:totP26,t:totT26}:null,'total-sem');
+  html+=filaData('Total',totV25>0?{v:totV25,p:totP25,t:totT25}:null,totV26>0?{v:totV26,p:totP26,t:totT26}:null,'total-sem',fmtE);
   html+=`</tbody></table>`;
   document.getElementById('sem-table-container').innerHTML=html;
 }
