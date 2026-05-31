@@ -877,6 +877,7 @@ function renderObjetivos(){
     diasAnt[nd]+=parseFloat(r.Comensales)||0;
     mixTotal+=parseFloat(r.Comensales)||0;
   });
+  const comensalesAñoAnt=mixTotal; // total comensales semana año anterior
 
   // Escenarios: comensales necesarios
   // Comensales = (EBITDA + CostsFijos) / (TicketMedio × MargenBruto)
@@ -912,6 +913,10 @@ function renderObjetivos(){
         <div style="font-size:10px;color:var(--texto-muted)">Semana referencia mix</div>
         <div style="font-size:13px;font-weight:700;margin-top:2px">${skAñoAnt}</div>
       </div>
+      <div style="background:var(--gris-fondo);border-radius:10px;padding:10px;grid-column:span 2">
+        <div style="font-size:10px;color:var(--texto-muted)">Comensales año anterior (${skAñoAnt})</div>
+        <div style="font-size:16px;font-weight:700;margin-top:2px">${comensalesAñoAnt>0?fmt(comensalesAñoAnt):'Sin datos'}</div>
+      </div>
     </div>
   </div>`;
 
@@ -933,20 +938,30 @@ function renderObjetivos(){
 
     html+=`<div class="section">
       <div class="section-title" style="color:${esc.color}">${esc.label}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
         <div style="background:var(--gris-fondo);border-radius:10px;padding:8px;text-align:center">
           <div style="font-size:9px;color:var(--texto-muted)">Comensales</div>
           <div style="font-size:18px;font-weight:700;color:${esc.color}">${fmt(Math.ceil(comensalesNec))}</div>
         </div>
         <div style="background:var(--gris-fondo);border-radius:10px;padding:8px;text-align:center">
           <div style="font-size:9px;color:var(--texto-muted)">Ventas</div>
-          <div style="font-size:14px;font-weight:700">${fmtK(ventasNec)}</div>
+          <div style="font-size:14px;font-weight:700">${fmtE(ventasNec)}</div>
         </div>
         <div style="background:var(--gris-fondo);border-radius:10px;padding:8px;text-align:center">
           <div style="font-size:9px;color:var(--texto-muted)">EBITDA</div>
-          <div style="font-size:14px;font-weight:700">${esc.pct>0?fmtK(ebitda):'—'}</div>
+          <div style="font-size:14px;font-weight:700">${esc.pct>0?fmtE(ebitda):'—'}</div>
         </div>
       </div>`;
+
+    // Gap vs año anterior
+    if(comensalesAñoAnt>0){
+      const gap=Math.ceil(comensalesNec)-comensalesAñoAnt;
+      const gapCls=gap<=0?'var(--verde)':gap<=comensalesAñoAnt*0.1?'var(--amarillo)':'var(--rojo)';
+      html+=`<div style="background:var(--gris-fondo);border-radius:10px;padding:8px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:10px;color:var(--texto-muted)">vs año anterior</div>
+        <div style="font-size:13px;font-weight:700;color:${gapCls}">${gap>=0?'+':''}${fmt(gap)} comensales</div>
+      </div>`;
+    }
 
     // Distribución diaria
     if(mixTotal>0){
