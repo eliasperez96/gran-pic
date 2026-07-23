@@ -246,10 +246,11 @@ const DIAS=['L','M','X','J','V','S','D'];
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const OBJETIVO_MARGEN=70;
 
-let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[],rawEscandallos=[];
+let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[],rawEscandalloResumen=[],rawEscandalloDetalle=[];
 let semanas=[],opIdx=0,tvIdx=0;
 let facMes=new Date().getMonth(),facAño=new Date().getFullYear();
 let semFechasMap={};
+let escCategoriaSel=null,escPlatoAbierto=null;
 
 function fmt(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
 function fmtE(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' €';}
@@ -813,17 +814,81 @@ function renderFacturas(){
   document.getElementById('facturas-detalle').innerHTML=html2;
 }
 
+function seleccionarCategoriaEsc(cat){
+  escCategoriaSel=cat;
+  escPlatoAbierto=null;
+  renderEscandallos();
+}
+
+function togglePlatoEsc(plato){
+  escPlatoAbierto=(escPlatoAbierto===plato)?null:plato;
+  renderEscandallos();
+}
+
 function renderEscandallos(){
   const cont=document.getElementById('escandallos-content');
-  if(!rawEscandallos.length){cont.innerHTML='<div class="loading">Sin datos</div>';return;}
-  const filas=[...rawEscandallos].sort((a,b)=>(a.Plato||'').localeCompare(b.Plato||''));
-  let html=`<div class="section"><div class="section-title">Coste teórico por plato</div>
-    <table class="data-table"><thead><tr><th>Plato</th><th class="r">Coste teórico</th></tr></thead><tbody>`;
-  filas.forEach(r=>{
-    const nombre=(r['Nombre Agora']||r['Plato']||'').toString().trim();
-    const coste=parseFloat(r['Coste teorico'])||0;
-    html+=`<tr><td><span class="plato-n">${nombre}</span></td><td class="r"><span class="importe">${coste?fmtD(coste):'—'}</span></td></tr>`;
+  if(!rawEscandalloResumen.length){cont.innerHTML='<div class="loading">Sin datos</div>';return;}
+
+  const categorias=[...new Set(rawEscandalloResumen.map(r=>r.Categoria).filter(Boolean))];
+  if(!escCategoriaSel||!categorias.includes(escCategoriaSel)) escCategoriaSel=categorias[0];
+
+  let html=`<div class="section"><div class="section-title">Categoría</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">`;
+  categorias.forEach(cat=>{
+    const on=cat===escCategoriaSel;
+    html+=`<button onclick="seleccionarCategoriaEsc('${cat.replace(/'/g,"\\'")}')" style="padding:6px 12px;border-radius:20px;border:0.5px solid var(--gris-borde);font-size:12px;font-weight:500;cursor:pointer;background:${on?'var(--azul-claro)':'var(--gris-fondo)'};color:${on?'white':'var(--texto)'}">${cat}</button>`;
   });
+  html+=`</div></div>`;
+
+  const platos=rawEscandalloResumen.filter(r=>r.Categoria===escCategoriaSel)
+    .sort((a,b)=>(a['Nombre Agora']||a.Plato||'').localeCompare(b['Nombre Agora']||b.Plato||''));
+
+  html+=`<div class="section"><div class="section-title">${escCategoriaSel} — ${platos.length} platos</div>
+    <table class="data-table"><thead><tr><th>Plato</th><th class="r">PVP</th><th class="r">Coste</th><th class="r">Ratio</th></tr></thead><tbody>`;
+
+  if(!platos.length) html+=`<tr><td colspan="4" style="text-align:center;color:var(--texto-light);padding:20px">Sin platos en esta categoría</td></tr>`;
+
+  platos.forEach(r=>{
+    const nombre=(r['Nombre Agora']||r.Plato||'').toString().trim();
+    const pvp=Number(r['PVP sin IVA'])||0;
+    const coste=Number(r['Coste racion'])||0;
+    const ratio=Number(r['Ratio pct'])||0;
+    const platoKey=r.Plato.toString();
+    const abierto=escPlatoAbierto===platoKey;
+
+    html+=`<tr style="cursor:pointer" onclick="togglePlatoEsc('${platoKey.replace(/'/g,"\\'")}')">
+      <td><span class="plato-n">${abierto?'▾ ':'▸ '}${nombre}</span></td>
+      <td class="r">${pvp?fmtD(pvp):'—'}</td>
+      <td class="r"><span class="importe">${coste?fmtD(coste):'—'}</span></td>
+      <td class="r"><span class="pct-badge">${ratio?Math.round(ratio)+'%':'—'}</span></td>
+    </tr>`;
+
+    if(abierto){
+      const lineas=rawEscandalloDetalle.filter(d=>d.Plato===platoKey)
+        .sort((a,b)=>(Number(b['Coste linea'])||0)-(Number(a['Coste linea'])||0));
+      html+=`<tr><td colspan="4" style="padding:0">
+        <div style="background:var(--gris-fondo);border-radius:10px;padding:10px;margin:6px 0">
+          <table style="width:100%;border-collapse:collapse"><thead><tr>
+            <th style="font-size:9px;text-align:left;color:var(--texto-muted);padding:3px">Ingrediente</th>
+            <th style="font-size:9px;text-align:right;color:var(--texto-muted);padding:3px">Cant.</th>
+            <th style="font-size:9px;text-align:right;color:var(--texto-muted);padding:3px">Coste</th>
+            <th style="font-size:9px;text-align:right;color:var(--texto-muted);padding:3px">%</th>
+          </tr></thead><tbody>`;
+      if(!lineas.length){
+        html+=`<tr><td colspan="4" style="text-align:center;color:var(--texto-light);font-size:11px;padding:8px">Sin líneas</td></tr>`;
+      }
+      lineas.forEach(l=>{
+        html+=`<tr>
+          <td style="font-size:11px;padding:3px">${(l.Ingrediente||'').toString().trim()}</td>
+          <td style="font-size:11px;text-align:right;padding:3px">${Number(l.Cantidad)||0}</td>
+          <td style="font-size:11px;text-align:right;padding:3px">${fmtD(Number(l['Coste linea'])||0)}</td>
+          <td style="font-size:11px;text-align:right;padding:3px">${Math.round(Number(l['Pct coste'])||0)}%</td>
+        </tr>`;
+      });
+      html+=`</tbody></table></div></td></tr>`;
+    }
+  });
+
   html+=`</tbody></table></div>`;
   cont.innerHTML=html;
 }
@@ -1021,15 +1086,16 @@ document.addEventListener('DOMContentLoaded',()=>{
 async function cargarDatos(){
   document.getElementById('last-update').textContent='Actualizando...';
   try {
-    const [r1,r2,r3,r4,r5,r6]=await Promise.all([
+    const [r1,r2,r3,r4,r5,r6,r7]=await Promise.all([
       fetch(`${API}?sheet=LK%20Diario`).then(r=>r.json()),
       fetch(`${API}?sheet=LK%20Productos`).then(r=>r.json()),
       fetch(`${API}?sheet=Lista`).then(r=>r.json()),
       fetch(`${API}?sheet=Maestro%20Proveedores`).then(r=>r.json()),
       fetch(`${API}?sheet=LK%20Semanal`).then(r=>r.json()),
-      fetch(`${API}?sheet=Coste%20teorico%20API`).then(r=>r.json()),
+      fetch(`${API}?sheet=Escandallo_Resumen_API`).then(r=>r.json()),
+      fetch(`${API}?sheet=Escandallo_Detalle_API`).then(r=>r.json()),
     ]);
-    rawDiario=r1;rawProductos=r2;rawFacturas=r3;rawMaestro=r4;rawSemanal=r5;rawEscandallos=r6;
+    rawDiario=r1;rawProductos=r2;rawFacturas=r3;rawMaestro=r4;rawSemanal=r5;rawEscandalloResumen=r6;rawEscandalloDetalle=r7;
 
     // Construir lista de semanas desde columnas Año/Semana (criterio Apps Script)
     const set=new Set();
