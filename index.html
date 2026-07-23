@@ -128,6 +128,7 @@
     <button class="main-tab" data-tab="margen">Margen</button>
     <button class="main-tab" data-tab="topventas">Top ventas</button>
     <button class="main-tab" data-tab="facturas">Facturas</button>
+    <button class="main-tab" data-tab="escandallos">Escandallos</button>
     <button class="main-tab" data-tab="objetivos">Objetivos</button>
   </div>
 </div>
@@ -187,6 +188,11 @@
     <div id="facturas-resumen"></div>
     <div id="facturas-detalle"></div>
   </div>
+
+  <div class="tab-panel" id="panel-escandallos">
+    <div id="escandallos-content"><div class="loading">Cargando...</div></div>
+  </div>
+
 <!-- OBJETIVOS -->
   <div class="tab-panel" id="panel-objetivos">
     <div class="section">
@@ -230,7 +236,7 @@
     </div>
     <div id="obj-resultado"></div>
   </div>
-  
+
   <button class="refresh-btn" id="refresh-btn">↻ Actualizar datos</button>
 </div>
 
@@ -240,7 +246,7 @@ const DIAS=['L','M','X','J','V','S','D'];
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const OBJETIVO_MARGEN=70;
 
-let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[];
+let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[],rawEscandallos=[];
 let semanas=[],opIdx=0,tvIdx=0;
 let facMes=new Date().getMonth(),facAño=new Date().getFullYear();
 let semFechasMap={};
@@ -309,7 +315,7 @@ function fechaDia(sk,numDia){
   if(semFechasMap[sk]&&semFechasMap[sk][numDia]) return f(semFechasMap[sk][numDia]);
   return '';
 }
-  
+
 function rangeSemana(sk){
   const f=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
   if(semFechasMap[sk]){
@@ -807,6 +813,21 @@ function renderFacturas(){
   document.getElementById('facturas-detalle').innerHTML=html2;
 }
 
+function renderEscandallos(){
+  const cont=document.getElementById('escandallos-content');
+  if(!rawEscandallos.length){cont.innerHTML='<div class="loading">Sin datos</div>';return;}
+  const filas=[...rawEscandallos].sort((a,b)=>(a.Plato||'').localeCompare(b.Plato||''));
+  let html=`<div class="section"><div class="section-title">Coste teórico por plato</div>
+    <table class="data-table"><thead><tr><th>Plato</th><th class="r">Coste teórico</th></tr></thead><tbody>`;
+  filas.forEach(r=>{
+    const nombre=(r['Nombre Agora']||r['Plato']||'').toString().trim();
+    const coste=parseFloat(r['Coste teorico'])||0;
+    html+=`<tr><td><span class="plato-n">${nombre}</span></td><td class="r"><span class="importe">${coste?fmtD(coste):'—'}</span></td></tr>`;
+  });
+  html+=`</tbody></table></div>`;
+  cont.innerHTML=html;
+}
+
 function renderOperativaDiaria(idx){
   const base=semanas[idx];
   const [a,s]=base.split('-');
@@ -996,18 +1017,19 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('obj-nsem-label').textContent=slider.value;
   });
 });
-  
+
 async function cargarDatos(){
   document.getElementById('last-update').textContent='Actualizando...';
   try {
-    const [r1,r2,r3,r4,r5]=await Promise.all([
+    const [r1,r2,r3,r4,r5,r6]=await Promise.all([
       fetch(`${API}?sheet=LK%20Diario`).then(r=>r.json()),
       fetch(`${API}?sheet=LK%20Productos`).then(r=>r.json()),
       fetch(`${API}?sheet=Lista`).then(r=>r.json()),
       fetch(`${API}?sheet=Maestro%20Proveedores`).then(r=>r.json()),
       fetch(`${API}?sheet=LK%20Semanal`).then(r=>r.json()),
+      fetch(`${API}?sheet=Coste%20teorico%20API`).then(r=>r.json()),
     ]);
-    rawDiario=r1;rawProductos=r2;rawFacturas=r3;rawMaestro=r4;rawSemanal=r5;
+    rawDiario=r1;rawProductos=r2;rawFacturas=r3;rawMaestro=r4;rawSemanal=r5;rawEscandallos=r6;
 
     // Construir lista de semanas desde columnas Año/Semana (criterio Apps Script)
     const set=new Set();
@@ -1039,6 +1061,7 @@ async function cargarDatos(){
     renderMargen();
     renderTopVentas(tvIdx);
     renderFacturas();
+    renderEscandallos();
   } catch(e){
     document.getElementById('last-update').textContent='Error';
     console.error(e);
