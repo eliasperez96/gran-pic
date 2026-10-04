@@ -128,6 +128,7 @@
     <button class="main-tab" data-tab="margen">Margen</button>
     <button class="main-tab" data-tab="topventas">Top ventas</button>
     <button class="main-tab" data-tab="facturas">Facturas</button>
+    <button class="main-tab" data-tab="visor">Visor facturas</button>
     <button class="main-tab" data-tab="escandallos">Escandallos</button>
     <button class="main-tab" data-tab="objetivos">Objetivos</button>
   </div>
@@ -187,6 +188,10 @@
     </div>
     <div id="facturas-resumen"></div>
     <div id="facturas-detalle"></div>
+  </div>
+
+  <div class="tab-panel" id="panel-visor">
+    <iframe id="visor-frame" title="Visor de facturas" style="display:block;width:100%;border:0;"></iframe>
   </div>
 
   <div class="tab-panel" id="panel-escandallos">
@@ -1211,8 +1216,16 @@ document.querySelectorAll('.main-tab').forEach(b=>{
     b.classList.add('on');
     document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('on'));
     document.getElementById('panel-'+b.dataset.tab).classList.add('on');
+    if(b.dataset.tab==='visor') abrirVisor();
   });
 });
+
+// Visor de facturas (facturas.html): se carga la primera vez que se abre la pestaña y ocupa el alto de la pantalla.
+function abrirVisor(){
+  const f=document.getElementById('visor-frame');
+  if(!f.src) f.src='facturas.html';
+  f.style.height=Math.max(480,window.innerHeight-f.getBoundingClientRect().top)+'px';
+}
 
 document.getElementById('refresh-btn').addEventListener('click',cargarDatos);
 cargarDatos();
