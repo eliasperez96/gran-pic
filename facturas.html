@@ -515,10 +515,15 @@ function openSheet(i){
         <span class="big">Total</span><span class="big">${eur.format(f.total)}</span>
       </div>
       <p class="note">Archivo: ${esc(f.archivo||'—')}</p>
-      ${f.pdf?`<div class="sactions"><a class="btn primary" href="${esc(f.pdf)}" target="_blank" rel="noopener">Abrir PDF original</a></div>`:''}
+      ${f.pdf?`<div class="sactions"><a class="btn primary" id="pdfBtn" href="${esc(f.pdf)}" target="_blank" rel="noopener">Ver PDF original</a></div>`:''}
     </div>`;
   sheet.classList.add('on'); backdrop.classList.add('on'); sheetOpen=true;
   $('closeBtn').onclick=closeSheet;
+  // Dentro de la app, el PDF se abre en su visor; si esta página se abre sola, va a Drive
+  const pdfBtn=$('pdfBtn');
+  if(pdfBtn&&window.parent!==window&&typeof window.parent.verPdf==='function'){
+    pdfBtn.onclick=e=>{e.preventDefault();window.parent.verPdf(f.pdf,`${f.proveedor} · ${fmtNum(f.fecha)}`);};
+  }
   $('closeBtn').focus();
 }
 function closeSheet(){sheet.classList.remove('on');backdrop.classList.remove('on');sheetOpen=false;stage.focus({preventScroll:true});}
