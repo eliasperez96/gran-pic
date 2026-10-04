@@ -1083,19 +1083,73 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 });
 
+// Paquete de datos: una sola petición (?paquete=1) con las 7 pestañas, generado cada hora en Apps Script.
+// Se guarda en el móvil para enseñar al instante los datos de la última vez mientras llegan los nuevos.
+const CACHE_KEY='granpic-paquete-v1';
+const HOJAS_APP=['LK Diario','LK Productos','Lista','Maestro Proveedores','LK Semanal','Escandallo_Resumen_API','Escandallo_Detalle_API'];
+let pintado=false;
+
+function expandirTabla(t){
+  if(!t||!t.cols) return [];
+  return t.filas.map(f=>{const o={};t.cols.forEach((c,i)=>{o[c]=f[i];});return o;});
+}
+
+function leerCache(){
+  try{const s=localStorage.getItem(CACHE_KEY);return s?JSON.parse(s):null;}catch(e){return null;}
+}
+
+function guardarCache(p){
+  try{localStorage.setItem(CACHE_KEY,JSON.stringify(p));}catch(e){}
+}
+
+// Si el Apps Script aún no tiene ?paquete=1, se usa el método anterior (7 peticiones).
+async function pedirPaqueteAntiguo(){
+  const tablas=await Promise.all(HOJAS_APP.map(h=>fetch(`${API}?sheet=${encodeURIComponent(h)}`).then(r=>r.json())));
+  const hojas={};
+  HOJAS_APP.forEach((h,i)=>{
+    const filas=tablas[i];
+    const cols=filas.length?Object.keys(filas[0]):[];
+    hojas[h]={cols,filas:filas.map(o=>cols.map(c=>o[c]))};
+  });
+  return {generado:new Date().toISOString(),hojas};
+}
+
+async function pedirPaquete(){
+  try{
+    const p=await fetch(`${API}?paquete=1`).then(r=>r.json());
+    if(p&&p.hojas) return p;
+  }catch(e){console.warn('Paquete no disponible, uso el método anterior',e);}
+  return pedirPaqueteAntiguo();
+}
+
 async function cargarDatos(){
-  document.getElementById('last-update').textContent='Actualizando...';
-  try {
-    const [r1,r2,r3,r4,r5,r6,r7]=await Promise.all([
-      fetch(`${API}?sheet=LK%20Diario`).then(r=>r.json()),
-      fetch(`${API}?sheet=LK%20Productos`).then(r=>r.json()),
-      fetch(`${API}?sheet=Lista`).then(r=>r.json()),
-      fetch(`${API}?sheet=Maestro%20Proveedores`).then(r=>r.json()),
-      fetch(`${API}?sheet=LK%20Semanal`).then(r=>r.json()),
-      fetch(`${API}?sheet=Escandallo_Resumen_API`).then(r=>r.json()),
-      fetch(`${API}?sheet=Escandallo_Detalle_API`).then(r=>r.json()),
-    ]);
-    rawDiario=r1;rawProductos=r2;rawFacturas=r3;rawMaestro=r4;rawSemanal=r5;rawEscandalloResumen=r6;rawEscandalloDetalle=r7;
+  const label=document.getElementById('last-update');
+  if(!pintado){
+    const cache=leerCache();
+    if(cache){try{pintarPaquete(cache);}catch(e){console.error(e);}}
+  }
+  label.textContent='Actualizando...';
+  try{
+    const p=await pedirPaquete();
+    pintarPaquete(p);
+    guardarCache(p);
+  }catch(e){
+    label.textContent=pintado?'Sin conexión':'Error';
+    console.error(e);
+  }
+}
+
+function pintarPaquete(p){
+  const h=p.hojas;
+  const r1=expandirTabla(h['LK Diario']);
+  rawDiario=r1;
+  rawProductos=expandirTabla(h['LK Productos']);
+  rawFacturas=expandirTabla(h['Lista']);
+  rawMaestro=expandirTabla(h['Maestro Proveedores']);
+  rawSemanal=expandirTabla(h['LK Semanal']);
+  rawEscandalloResumen=expandirTabla(h['Escandallo_Resumen_API']);
+  rawEscandalloDetalle=expandirTabla(h['Escandallo_Detalle_API']);
+  const semAntes=pintado?{op:semanas[opIdx],tv:semanas[tvIdx]}:null;
 
     // Construir lista de semanas desde columnas Año/Semana (criterio Apps Script)
     const set=new Set();
@@ -1119,19 +1173,21 @@ async function cargarDatos(){
     opIdx=semanas.indexOf(hoy);
     if(opIdx<0) opIdx=semanas.length-1;
     tvIdx=opIdx;
+    // Al refrescar, mantener la semana que el usuario estaba mirando
+    if(semAntes){
+      if(semanas.includes(semAntes.op)) opIdx=semanas.indexOf(semAntes.op);
+      if(semanas.includes(semAntes.tv)) tvIdx=semanas.indexOf(semAntes.tv);
+    }
 
-    const ahora=new Date();
-    document.getElementById('last-update').textContent=`${ahora.getHours()}:${String(ahora.getMinutes()).padStart(2,'0')}`;
+    const gen=new Date(p.generado);
+    document.getElementById('last-update').textContent=`${gen.getHours()}:${String(gen.getMinutes()).padStart(2,'0')}`;
     renderOperativaDiaria(opIdx);
     renderOperativaSemanal();
     renderMargen();
     renderTopVentas(tvIdx);
     renderFacturas();
     renderEscandallos();
-  } catch(e){
-    document.getElementById('last-update').textContent='Error';
-    console.error(e);
-  }
+    pintado=true;
 }
 
 document.getElementById('op-prev').addEventListener('click',()=>{if(opIdx>0){opIdx--;renderOperativaDiaria(opIdx);}});
