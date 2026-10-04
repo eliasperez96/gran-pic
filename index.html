@@ -22,6 +22,9 @@
   .content{padding:16px;}
   .tab-panel{display:none;}
   .tab-panel.on{display:block;}
+  tr.fila-pdf{cursor:pointer;}
+  tr.fila-pdf:active td{background:rgba(24,95,165,0.08);}
+  .pdf-ico{font-size:10px;font-weight:600;color:var(--azul-claro);margin-left:4px;}
   .periodo-nav{display:flex;align-items:center;gap:8px;margin-bottom:14px;background:var(--gris-card);border-radius:14px;padding:10px 14px;border:0.5px solid var(--gris-borde);}
   .periodo-btn{background:var(--gris-fondo);border:0.5px solid var(--gris-borde);border-radius:20px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--texto);flex-shrink:0;}
   .periodo-btn:active{background:var(--azul-claro);color:white;}
@@ -812,7 +815,10 @@ function renderFacturas(){
     const bi=parseFloat(r['Base Imponible']||r['Base Imponible (€)'])||0,iva=parseFloat(r['IVA (€)']||r['IVA'])||0,total=parseFloat(r['Total (€)']||r['Total'])||bi+iva;
     const cat=maestroMap[prov.toLowerCase()]||'Otros';
     const catLabel=cat==='Comida'?'Comida':(cat==='Bebida'?'Bebida':'Otros');
-    html2+=`<tr><td style="font-size:11px;color:var(--texto-muted);white-space:nowrap">${fechaStr}</td><td><span class="badge ${badgeClass[catLabel]}">${catLabel}</span><br><span style="font-size:12px;font-weight:500">${prov}</span></td><td class="r">${fmtD(bi)}</td><td class="r">${fmtD(total)}</td></tr>`;
+    // Si la factura tiene enlace al PDF en Drive, la fila se puede tocar para abrirlo
+    const pdf=/^https:\/\//.test(r['Enlace PDF']||'')?r['Enlace PDF']:'';
+    const trPdf=pdf?` class="fila-pdf" data-pdf="${pdf}" title="Abrir el PDF de la factura"`:'';
+    html2+=`<tr${trPdf}><td style="font-size:11px;color:var(--texto-muted);white-space:nowrap">${fechaStr}</td><td><span class="badge ${badgeClass[catLabel]}">${catLabel}</span>${pdf?' <span class="pdf-ico">PDF ›</span>':''}<br><span style="font-size:12px;font-weight:500">${prov}</span></td><td class="r">${fmtD(bi)}</td><td class="r">${fmtD(total)}</td></tr>`;
   });
   if(!detalle.length) html2+=`<tr><td colspan="4" style="text-align:center;color:var(--texto-light);padding:20px">Sin facturas este mes</td></tr>`;
   html2+=`<tr class="total-row"><td colspan="2">Total (${detalle.length} facturas)</td><td class="r">${fmtD(totDS)}</td><td class="r">${fmtD(totDC)}</td></tr></tbody></table></div>`;
@@ -1226,6 +1232,11 @@ function abrirVisor(){
   if(!f.src) f.src='facturas.html';
   f.style.height=Math.max(480,window.innerHeight-f.getBoundingClientRect().top)+'px';
 }
+
+document.getElementById('facturas-detalle').addEventListener('click',e=>{
+  const fila=e.target.closest('tr.fila-pdf');
+  if(fila) window.open(fila.dataset.pdf,'_blank','noopener');
+});
 
 document.getElementById('refresh-btn').addEventListener('click',cargarDatos);
 cargarDatos();
