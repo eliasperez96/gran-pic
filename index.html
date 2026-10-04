@@ -118,8 +118,9 @@
   .pdf-bar{display:flex;align-items:center;gap:8px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;background:var(--azul);color:white;}
   .pdf-bar .pdf-tit{flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .pdf-bar button,.pdf-bar a{flex:none;font-size:12px;font-weight:600;color:white;background:rgba(255,255,255,0.18);border:0;border-radius:14px;padding:7px 12px;text-decoration:none;cursor:pointer;}
-  .pdf-pages{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 8px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:10px;}
-  .pdf-pages canvas{display:block;max-width:100%;background:white;box-shadow:0 2px 10px rgba(0,0,0,0.4);}
+  .pdf-pages{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;padding:12px 8px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-start;gap:10px;}
+  .pdf-pages canvas{display:block;flex:none;margin:0 auto;background:white;box-shadow:0 2px 10px rgba(0,0,0,0.4);}
+  .pdf-bar .pdf-zoom{min-width:34px;font-size:15px;padding:5px 10px;}
   .pdf-msg{color:rgba(255,255,255,0.8);font-size:13px;text-align:center;padding:40px 20px;line-height:1.5;}
   .pdf-msg a{color:white;}
 </style>
@@ -128,7 +129,9 @@
 <div class="pdf-modal" id="pdf-modal" role="dialog" aria-modal="true" aria-label="Factura en PDF">
   <div class="pdf-bar">
     <span class="pdf-tit" id="pdf-tit">Factura</span>
-    <a id="pdf-drive" href="#" target="_blank" rel="noopener">Abrir en Drive</a>
+    <button class="pdf-zoom" id="pdf-menos" aria-label="Reducir">−</button>
+    <button class="pdf-zoom" id="pdf-mas" aria-label="Ampliar">+</button>
+    <a id="pdf-drive" href="#" target="_blank" rel="noopener">Drive</a>
     <button id="pdf-cerrar">Cerrar</button>
   </div>
   <div class="pdf-pages" id="pdf-pages"></div>
@@ -1287,23 +1290,73 @@ async function verPdf(url,titulo){
     const doc=await lib.getDocument({data:bytes}).promise;
     if(verPdf.sesion!==sesion) return;
     pages.innerHTML='';
-    const ancho=Math.min(pages.clientWidth-16,900),dpr=window.devicePixelRatio||1;
+    pdfVista.base=Math.min(pages.clientWidth-16,900);pdfVista.zoom=1;pdfVista.paginas=[];
     for(let n=1;n<=doc.numPages;n++){
       const page=await doc.getPage(n);
       if(verPdf.sesion!==sesion) return;
-      const vp=page.getViewport({scale:1}),escala=ancho/vp.width,v=page.getViewport({scale:escala*dpr});
       const c=document.createElement('canvas');
-      c.width=v.width;c.height=v.height;c.style.width=Math.round(vp.width*escala)+'px';
       pages.appendChild(c);
-      await page.render({canvasContext:c.getContext('2d'),viewport:v}).promise;
+      pdfVista.paginas.push({page,vp:page.getViewport({scale:1}),c});
     }
+    await dibujarPaginas();
   }catch(e){
     console.warn('Visor PDF',e);
     if(verPdf.sesion===sesion) pages.innerHTML=`<div class="pdf-msg">No se ha podido mostrar la factura aquí.<br><a href="${url}" target="_blank" rel="noopener">Abrirla en Drive</a></div>`;
   }
 }
+// Zoom: pellizcar, doble toque o botones − / +. Mientras se pellizca solo se estira la imagen;
+// al soltar se vuelve a dibujar con nitidez.
+const pdfVista={paginas:[],base:0,zoom:1,turno:0};
+function tamCss(p){const w=Math.round(pdfVista.base*pdfVista.zoom);return {w,h:Math.round(w*p.vp.height/p.vp.width)};}
+function ajustarCss(){pdfVista.paginas.forEach(p=>{const t=tamCss(p);p.c.style.width=t.w+'px';p.c.style.height=t.h+'px';});}
+async function dibujarPaginas(){
+  const turno=++pdfVista.turno,dpr=window.devicePixelRatio||1;
+  ajustarCss();
+  for(const p of pdfVista.paginas){
+    const t=tamCss(p),v=p.page.getViewport({scale:Math.min(t.w*dpr,4096)/p.vp.width});
+    const tmp=document.createElement('canvas');
+    tmp.width=Math.floor(v.width);tmp.height=Math.floor(v.height);
+    await p.page.render({canvasContext:tmp.getContext('2d'),viewport:v}).promise;
+    if(turno!==pdfVista.turno) return;
+    p.c.width=tmp.width;p.c.height=tmp.height;p.c.getContext('2d').drawImage(tmp,0,0);
+  }
+}
+function fijarZoom(z,cx,cy){
+  const pages=document.getElementById('pdf-pages'),viejo=pdfVista.zoom;
+  z=Math.max(1,Math.min(4,z));
+  if(!pdfVista.paginas.length||Math.abs(z-viejo)<0.01) return false;
+  if(cx==null){cx=pages.clientWidth/2;cy=pages.clientHeight/2;}
+  const px=(pages.scrollLeft+cx)/viejo,py=(pages.scrollTop+cy)/viejo;
+  pdfVista.zoom=z;ajustarCss();
+  pages.scrollLeft=px*z-cx;pages.scrollTop=py*z-cy;
+  return true;
+}
+document.getElementById('pdf-mas').addEventListener('click',()=>{if(fijarZoom(pdfVista.zoom*1.5))dibujarPaginas();});
+document.getElementById('pdf-menos').addEventListener('click',()=>{if(fijarZoom(pdfVista.zoom/1.5))dibujarPaginas();});
+(function(){
+  const pages=document.getElementById('pdf-pages');
+  let pinza=null,ultimoToque=0;
+  const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+  pages.addEventListener('touchstart',e=>{
+    const r=pages.getBoundingClientRect();
+    if(e.touches.length===2){
+      pinza={d:dist(e.touches),z:pdfVista.zoom,cx:(e.touches[0].clientX+e.touches[1].clientX)/2-r.left,cy:(e.touches[0].clientY+e.touches[1].clientY)/2-r.top};
+    }else if(e.touches.length===1){
+      const ahora=Date.now();
+      if(ahora-ultimoToque<300){
+        e.preventDefault();ultimoToque=0;
+        if(fijarZoom(pdfVista.zoom>1.2?1:2.5,e.touches[0].clientX-r.left,e.touches[0].clientY-r.top)) dibujarPaginas();
+      }else ultimoToque=ahora;
+    }
+  },{passive:false});
+  pages.addEventListener('touchmove',e=>{
+    if(pinza&&e.touches.length===2){e.preventDefault();fijarZoom(pinza.z*dist(e.touches)/pinza.d,pinza.cx,pinza.cy);}
+  },{passive:false});
+  pages.addEventListener('touchend',e=>{if(pinza&&e.touches.length<2){pinza=null;dibujarPaginas();}});
+})();
+
 function cerrarPdf(){
-  verPdf.sesion=null;
+  verPdf.sesion=null;pdfVista.turno++;pdfVista.paginas=[];
   document.getElementById('pdf-modal').classList.remove('on');
   document.getElementById('pdf-pages').innerHTML='';
   document.body.style.overflow='';
