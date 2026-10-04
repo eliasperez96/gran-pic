@@ -522,6 +522,7 @@ function openSheet(i){
   // Dentro de la app, el PDF se abre en su visor; si esta página se abre sola, va a Drive
   const pdfBtn=$('pdfBtn');
   if(pdfBtn&&window.parent!==window&&typeof window.parent.verPdf==='function'){
+    if(typeof window.parent.precargarPdf==='function') window.parent.precargarPdf(f.pdf);
     pdfBtn.onclick=e=>{e.preventDefault();window.parent.verPdf(f.pdf,`${f.proveedor} · ${fmtNum(f.fecha)}`);};
   }
   $('closeBtn').focus();

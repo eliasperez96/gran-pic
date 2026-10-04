@@ -1244,6 +1244,7 @@ document.querySelectorAll('.main-tab').forEach(b=>{
     document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('on'));
     document.getElementById('panel-'+b.dataset.tab).classList.add('on');
     if(b.dataset.tab==='visor') abrirVisor();
+    if(b.dataset.tab==='visor'||b.dataset.tab==='facturas') cargarPdfJs().catch(()=>{});
   });
 });
 
@@ -1258,13 +1259,17 @@ function abrirVisor(){
 // Pide el PDF a Apps Script (?pdf=<id>, solo facturas de Lista) y lo dibuja con PDF.js.
 // Si algo falla, ofrece abrirlo en Drive.
 const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
-let pdfjsCargando=null;
+let pdfjsCargando=null,pdfWorker=null;
 function cargarPdfJs(){
   if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
   if(!pdfjsCargando) pdfjsCargando=new Promise((ok,ko)=>{
     const s=document.createElement('script');
     s.src=PDFJS+'pdf.min.js';
-    s.onload=()=>{window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';ok(window.pdfjsLib);};
+    s.onload=()=>{
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';
+      pdfWorker=new window.pdfjsLib.PDFWorker();  // se arranca ya, para no esperarlo al abrir la factura
+      ok(window.pdfjsLib);
+    };
     s.onerror=()=>{pdfjsCargando=null;ko(new Error('No se pudo cargar el visor de PDF'));};
     document.head.appendChild(s);
   });
@@ -1272,6 +1277,35 @@ function cargarPdfJs(){
 }
 
 function idDeEnlace(url){const m=/\/file\/d\/([^/]+)/.exec(url||'');return m?m[1]:'';}
+
+// Los PDF ya vistos se guardan en el móvil (Cache Storage, máx. 60) y se abren al instante.
+// pedirPdfBytes reutiliza la petición si ya se había empezado (al tocar la fila, antes de soltar).
+const PDF_CACHE='granpic-pdf-v1',pdfPedidos={};
+function pedirPdfBytes(id){
+  if(!pdfPedidos[id]) pdfPedidos[id]=(async()=>{
+    const clave=`${API}?pdf=${encodeURIComponent(id)}`;
+    try{const c=await caches.open(PDF_CACHE),r=await c.match(clave);if(r) return new Uint8Array(await r.arrayBuffer());}catch(e){}
+    const resp=await fetch(clave).then(r=>r.json());
+    if(!resp||!resp.base64) throw new Error(resp&&resp.error||'Respuesta vacía');
+    const bin=atob(resp.base64),bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    try{
+      const c=await caches.open(PDF_CACHE);
+      await c.put(clave,new Response(bytes.slice(),{headers:{'Content-Type':'application/pdf'}}));
+      const claves=await c.keys();
+      for(const k of claves.slice(0,Math.max(0,claves.length-60))) await c.delete(k);
+    }catch(e){}
+    return bytes;
+  })();
+  const p=pdfPedidos[id];
+  p.then(()=>setTimeout(()=>{if(pdfPedidos[id]===p) delete pdfPedidos[id];},60000),()=>{if(pdfPedidos[id]===p) delete pdfPedidos[id];});
+  return p;
+}
+function precargarPdf(url){
+  const id=idDeEnlace(url);
+  cargarPdfJs().catch(()=>{});
+  if(id) pedirPdfBytes(id).catch(()=>{});
+}
 
 async function verPdf(url,titulo){
   const modal=document.getElementById('pdf-modal'),pages=document.getElementById('pdf-pages');
@@ -1283,11 +1317,8 @@ async function verPdf(url,titulo){
   try{
     const id=idDeEnlace(url);
     if(!id) throw new Error('Enlace no válido');
-    const [lib,resp]=await Promise.all([cargarPdfJs(),fetch(`${API}?pdf=${encodeURIComponent(id)}`).then(r=>r.json())]);
-    if(!resp||!resp.base64) throw new Error(resp&&resp.error||'Respuesta vacía');
-    const bin=atob(resp.base64),bytes=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-    const doc=await lib.getDocument({data:bytes}).promise;
+    const [lib,bytes]=await Promise.all([cargarPdfJs(),pedirPdfBytes(id)]);
+    const doc=await lib.getDocument({data:bytes.slice(),worker:pdfWorker}).promise;  // copia: PDF.js se queda con el buffer
     if(verPdf.sesion!==sesion) return;
     pages.innerHTML='';
     pdfVista.base=Math.min(pages.clientWidth-16,900);pdfVista.zoom=1;pdfVista.paginas=[];
@@ -1364,6 +1395,10 @@ function cerrarPdf(){
 document.getElementById('pdf-cerrar').addEventListener('click',cerrarPdf);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('pdf-modal').classList.contains('on'))cerrarPdf();});
 
+document.getElementById('facturas-detalle').addEventListener('pointerdown',e=>{
+  const fila=e.target.closest('tr.fila-pdf');
+  if(fila) precargarPdf(fila.dataset.pdf);
+});
 document.getElementById('facturas-detalle').addEventListener('click',e=>{
   const fila=e.target.closest('tr.fila-pdf');
   if(fila) verPdf(fila.dataset.pdf,fila.dataset.titulo);
