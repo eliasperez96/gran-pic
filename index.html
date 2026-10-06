@@ -1428,9 +1428,12 @@ function renderPorClasificar(){
   rawFacturas.forEach(r=>{
     const prov=(r.Proveedor||'').toString().trim();
     if(!prov||conocidos.has(prov.toLowerCase())) return;
-    const g=grupos[prov]||(grupos[prov]={n:0,total:0,ultima:''});
+    const g=grupos[prov]||(grupos[prov]={n:0,total:0,ultima:'',pdf:'',pdfFecha:''});
     g.n++;g.total+=parseFloat(r['Total (€)']||r['Total'])||0;
     const f=(r.Fecha||'').toString().slice(0,10); if(f>g.ultima) g.ultima=f;
+    // La factura más reciente con PDF, para poder verla antes de clasificar
+    const pdf=/^https:\/\//.test(r['Enlace PDF']||'')?r['Enlace PDF']:'';
+    if(pdf&&f>=g.pdfFecha){g.pdf=pdf;g.pdfFecha=f;}
   });
   const lista=Object.entries(grupos).sort((a,b)=>b[1].ultima.localeCompare(a[1].ultima));
   if(!lista.length){cont.innerHTML='';return;}
@@ -1439,7 +1442,10 @@ function renderPorClasificar(){
   if(!leerPin()) html+=`<div class="pc-fila" style="margin-bottom:10px"><input id="pc-pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN de la app (solo la primera vez)"></div>`;
   lista.forEach(([prov,g],i)=>{
     html+=`<div class="pc-item" data-prov="${escHtml(prov)}">
-      <div><div class="pc-nombre">${escHtml(prov)}</div><div class="pc-meta">${g.n} ${g.n===1?'factura':'facturas'} · ${fmtD(g.total)} · última ${escHtml(g.ultima)}</div></div>
+      <div class="pc-fila" style="justify-content:space-between;flex-wrap:nowrap">
+        <div style="min-width:0"><div class="pc-nombre">${escHtml(prov)}</div><div class="pc-meta">${g.n} ${g.n===1?'factura':'facturas'} · ${fmtD(g.total)} · última ${escHtml(g.ultima)}</div></div>
+        ${g.pdf?`<button class="pc-btn" data-ver="${escHtml(g.pdf)}" data-titulo="${escHtml(prov)} · ${escHtml(g.pdfFecha)}">Ver factura</button>`:'<span class="pc-meta">PDF aún sin enlazar</span>'}
+      </div>
       <div class="pc-sep">Es un proveedor que ya existe</div>
       <div class="pc-fila"><select id="pc-sel-${i}"><option value="">Elige el proveedor…</option>${opciones}</select><button class="pc-btn pri" data-accion="existente" data-i="${i}">Asignar</button></div>
       <div class="pc-sep">O es un proveedor nuevo</div>
@@ -1456,6 +1462,8 @@ function renderPorClasificar(){
 }
 
 document.getElementById('por-clasificar').addEventListener('click',async e=>{
+  const ver=e.target.closest('button[data-ver]');
+  if(ver){verPdf(ver.dataset.ver,ver.dataset.titulo);return;}
   const b=e.target.closest('button[data-accion]'); if(!b) return;
   const i=b.dataset.i, item=b.closest('.pc-item'), prov=item.dataset.prov, msg=document.getElementById('pc-msg-'+i);
   const campoPin=document.getElementById('pc-pin');
