@@ -112,6 +112,19 @@
   .m-rojo{color:var(--rojo);font-weight:700;}
   .obj-line{display:inline-block;width:8px;height:8px;background:rgba(0,0,0,0.25);border-radius:1px;margin-right:3px;vertical-align:middle;}
   .margen-subtitulo{font-size:10px;color:var(--texto-light);margin-bottom:8px;}
+  /* Por clasificar (Facturas) */
+  .pc-item{border-top:0.5px solid var(--gris-borde);padding:12px 0;display:flex;flex-direction:column;gap:8px;}
+  .pc-item:first-of-type{border-top:none;padding-top:0;}
+  .pc-nombre{font-size:13px;font-weight:600;}
+  .pc-meta{font-size:11px;color:var(--texto-muted);}
+  .pc-fila{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .pc-fila select,.pc-fila input{flex:1;min-width:140px;font-size:13px;padding:7px 8px;border:0.5px solid var(--gris-borde);border-radius:10px;background:var(--gris-fondo);color:var(--texto);}
+  .pc-btn{font-size:12px;font-weight:600;padding:7px 12px;border-radius:10px;border:0.5px solid var(--gris-borde);background:var(--gris-fondo);color:var(--texto);cursor:pointer;}
+  .pc-btn.pri{background:var(--azul-claro);color:white;border-color:transparent;}
+  .pc-btn:disabled{opacity:0.5;}
+  .pc-msg{font-size:11px;}
+  .pc-msg.ok{color:var(--verde);} .pc-msg.err{color:var(--rojo);}
+  .pc-sep{font-size:10px;color:var(--texto-light);text-transform:uppercase;letter-spacing:0.4px;}
   /* Visor de PDF dentro de la app */
   .pdf-modal{position:fixed;inset:0;z-index:100;display:none;flex-direction:column;background:#2b2f33;}
   .pdf-modal.on{display:flex;}
@@ -205,6 +218,7 @@
   </div>
 
   <div class="tab-panel" id="panel-facturas">
+    <div id="por-clasificar"></div>
     <div class="periodo-nav">
       <button class="periodo-btn" id="fac-prev">‹</button>
       <span class="periodo-label" id="fac-label">...</span>
@@ -798,6 +812,7 @@ function renderTop(sk,titulo,containerId){
 }
 
 function renderFacturas(){
+  renderPorClasificar();
   const maestroMap=buildMaestroMap();
   document.getElementById('fac-label').textContent=`${MESES[facMes]} ${facAño}`;
   const facsMes=rawFacturas.filter(r=>{
@@ -1394,6 +1409,86 @@ function cerrarPdf(){
 }
 document.getElementById('pdf-cerrar').addEventListener('click',cerrarPdf);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('pdf-modal').classList.contains('on'))cerrarPdf();});
+
+
+// ── Por clasificar ───────────────────────────────────────────────────────────
+// Facturas cuyo proveedor no está en el Maestro. Se asignan a un proveedor existente o se da de alta uno
+// nuevo (Comida, Bebida u Otros servicios). Lo guarda Apps Script (doPost) con el PIN de la app, y el
+// agente de facturas lo reconocerá solo la próxima vez.
+const PIN_KEY='granpic-pin';
+function leerPin(){try{return localStorage.getItem(PIN_KEY)||'';}catch(e){return '';}}
+function guardarPin(p){try{p?localStorage.setItem(PIN_KEY,p):localStorage.removeItem(PIN_KEY);}catch(e){}}
+const escHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function renderPorClasificar(){
+  const cont=document.getElementById('por-clasificar');
+  const nombres=rawMaestro.map(r=>(r['Nomenclatura Gran Pic']||'').toString().trim()).filter(Boolean);
+  const conocidos=new Set(nombres.map(n=>n.toLowerCase()));
+  const grupos={};
+  rawFacturas.forEach(r=>{
+    const prov=(r.Proveedor||'').toString().trim();
+    if(!prov||conocidos.has(prov.toLowerCase())) return;
+    const g=grupos[prov]||(grupos[prov]={n:0,total:0,ultima:''});
+    g.n++;g.total+=parseFloat(r['Total (€)']||r['Total'])||0;
+    const f=(r.Fecha||'').toString().slice(0,10); if(f>g.ultima) g.ultima=f;
+  });
+  const lista=Object.entries(grupos).sort((a,b)=>b[1].ultima.localeCompare(a[1].ultima));
+  if(!lista.length){cont.innerHTML='';return;}
+  const opciones=nombres.slice().sort((a,b)=>a.localeCompare(b,'es')).map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
+  let html=`<div class="section"><div class="section-title">Por clasificar · ${lista.length} ${lista.length===1?'proveedor':'proveedores'}</div>`;
+  if(!leerPin()) html+=`<div class="pc-fila" style="margin-bottom:10px"><input id="pc-pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN de la app (solo la primera vez)"></div>`;
+  lista.forEach(([prov,g],i)=>{
+    html+=`<div class="pc-item" data-prov="${escHtml(prov)}">
+      <div><div class="pc-nombre">${escHtml(prov)}</div><div class="pc-meta">${g.n} ${g.n===1?'factura':'facturas'} · ${fmtD(g.total)} · última ${escHtml(g.ultima)}</div></div>
+      <div class="pc-sep">Es un proveedor que ya existe</div>
+      <div class="pc-fila"><select id="pc-sel-${i}"><option value="">Elige el proveedor…</option>${opciones}</select><button class="pc-btn pri" data-accion="existente" data-i="${i}">Asignar</button></div>
+      <div class="pc-sep">O es un proveedor nuevo</div>
+      <div class="pc-fila"><input id="pc-nom-${i}" value="${escHtml(prov)}" aria-label="Nombre del proveedor nuevo"></div>
+      <div class="pc-fila">
+        <button class="pc-btn" data-accion="nuevo" data-cat="Comida" data-i="${i}">Comida</button>
+        <button class="pc-btn" data-accion="nuevo" data-cat="Bebida" data-i="${i}">Bebida</button>
+        <button class="pc-btn" data-accion="nuevo" data-cat="Otros" data-i="${i}">Otros servicios</button>
+      </div>
+      <div class="pc-msg" id="pc-msg-${i}"></div>
+    </div>`;
+  });
+  cont.innerHTML=html+'</div>';
+}
+
+document.getElementById('por-clasificar').addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-accion]'); if(!b) return;
+  const i=b.dataset.i, item=b.closest('.pc-item'), prov=item.dataset.prov, msg=document.getElementById('pc-msg-'+i);
+  const campoPin=document.getElementById('pc-pin');
+  const pin=leerPin()||(campoPin?campoPin.value.trim():'');
+  if(!pin){msg.className='pc-msg err';msg.textContent='Escribe el PIN de la app arriba.';if(campoPin)campoPin.focus();return;}
+  let destino;
+  if(b.dataset.accion==='existente'){
+    const nombre=document.getElementById('pc-sel-'+i).value;
+    if(!nombre){msg.className='pc-msg err';msg.textContent='Elige un proveedor de la lista.';return;}
+    destino={tipo:'existente',nombre};
+  }else{
+    const nombre=document.getElementById('pc-nom-'+i).value.trim();
+    if(!nombre){msg.className='pc-msg err';msg.textContent='Escribe el nombre del proveedor.';return;}
+    destino={tipo:'nuevo',nombre,categoria:b.dataset.cat};
+  }
+  item.querySelectorAll('button').forEach(x=>x.disabled=true);
+  msg.className='pc-msg';msg.textContent='Guardando…';
+  try{
+    const r=await fetch(API,{method:'POST',body:JSON.stringify({pin,accion:'clasificar',proveedorFactura:prov,destino})}).then(x=>x.json());
+    if(r.error){
+      if(r.error==='PIN incorrecto') guardarPin('');
+      throw new Error(r.error);
+    }
+    guardarPin(pin);
+    msg.className='pc-msg ok';
+    msg.textContent=`Guardado: ${r.facturas} ${r.facturas===1?'factura pasa':'facturas pasan'} a ${r.proveedor}. Actualizando…`;
+    cargarDatos();
+  }catch(err){
+    msg.className='pc-msg err';msg.textContent='No se ha guardado: '+err.message;
+    item.querySelectorAll('button').forEach(x=>x.disabled=false);
+    if(!leerPin()) renderPorClasificar();
+  }
+});
 
 document.getElementById('facturas-detalle').addEventListener('pointerdown',e=>{
   const fila=e.target.closest('tr.fila-pdf');
