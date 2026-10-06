@@ -112,6 +112,11 @@
   .m-rojo{color:var(--rojo);font-weight:700;}
   .obj-line{display:inline-block;width:8px;height:8px;background:rgba(0,0,0,0.25);border-radius:1px;margin-right:3px;vertical-align:middle;}
   .margen-subtitulo{font-size:10px;color:var(--texto-light);margin-bottom:8px;}
+  /* Ingeniería de menú */
+  .menu-matriz{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+  .menu-celda{border:1px solid;border-radius:12px;padding:8px;min-width:0;}
+  .menu-celda-tit{font-size:11px;font-weight:700;margin-bottom:4px;}
+  .menu-celda-plato{font-size:11px;line-height:1.35;color:var(--texto);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   /* P&L */
   .pl-tipos{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;}
   .pl-tipo{font-size:12px;font-weight:600;padding:6px 10px;border-radius:14px;border:0.5px solid var(--gris-borde);background:var(--gris-card);color:var(--texto-muted);cursor:pointer;}
@@ -179,6 +184,7 @@
     <button class="main-tab" data-tab="op-semanal">Op. Semanal</button>
     <button class="main-tab" data-tab="margen">Margen</button>
     <button class="main-tab" data-tab="pl">P&amp;L</button>
+    <button class="main-tab" data-tab="menu">Ing. menú</button>
     <button class="main-tab" data-tab="topventas">Top ventas</button>
     <button class="main-tab" data-tab="facturas">Facturas</button>
     <button class="main-tab" data-tab="visor">Visor facturas</button>
@@ -216,6 +222,10 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="tab-panel" id="panel-menu">
+    <div id="menu-contenido"><div class="loading">Cargando...</div></div>
   </div>
 
   <div class="tab-panel" id="panel-pl">
@@ -1270,6 +1280,7 @@ function pintarPaquete(p){
     renderFacturas();
     renderEscandallos();
     renderPL();
+    renderMenu();
     pintado=true;
 }
 
@@ -1438,6 +1449,131 @@ function cerrarPdf(){
 document.getElementById('pdf-cerrar').addEventListener('click',cerrarPdf);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('pdf-modal').classList.contains('on'))cerrarPdf();});
 
+
+// ── Ingeniería de menú ───────────────────────────────────────────────────────
+// Método de Kasavana y Smith. Rotación: unidades vendidas (LK Productos). Margen por ración: precio medio
+// real cobrado (ventas sin IVA / unidades) menos el coste de la ración del escandallo. Un plato tiene rotación
+// alta si sus unidades son al menos el 70 % de lo que le tocaría en un reparto igual, y margen alto si su
+// margen por ración supera la media ponderada por unidades del grupo analizado.
+const MENU_PERIODOS={s4:'Últimas 4 semanas',s13:'Últimas 13 semanas',anio:'Este año',anioAnt:'Año pasado'};
+const MENU_GRUPOS={
+  estrella:{nombre:'Estrellas',icono:'⭐',color:'#1D9E75',consejo:'Mucha venta y mucho margen. Mantenerlos, cuidar la calidad y destacarlos en la carta.'},
+  caballo:{nombre:'Caballos de batalla',icono:'🐴',color:'#185FA5',consejo:'Se venden mucho pero dejan poco margen. Revisar el escandallo, la ración o subir algo el precio.'},
+  enigma:{nombre:'Enigmas',icono:'❓',color:'#F59E0B',consejo:'Buen margen pero poca venta. Darles visibilidad: mejor posición en la carta, recomendarlos en sala o cambiar el nombre.'},
+  perro:{nombre:'Perros',icono:'🐶',color:'#E24B4A',consejo:'Poca venta y poco margen. Replantearlos o sacarlos de la carta.'}
+};
+let menuPeriodo='s13',menuSeccion='Todas';
+const normMenu=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+
+function semanasMenu(){
+  const hoy=masDias(new Date(),-1),a=hoy.getFullYear(),s=semanaDe(hoy);
+  const ultimas=n=>{const r=new Set();let aa=a,ss=s;for(let i=0;i<n;i++){r.add(`${aa}-${ss}`);ss--;if(ss<1){aa--;ss=semanasDelAnio(aa);}}return r;};
+  if(menuPeriodo==='s4') return {set:ultimas(4)};
+  if(menuPeriodo==='s13') return {set:ultimas(13)};
+  if(menuPeriodo==='anio') return {anio:a};
+  return {anio:a-1};
+}
+
+function datosMenu(){
+  const filtro=semanasMenu();
+  const ventas={};
+  rawProductos.forEach(r=>{
+    const a=parseInt(r['Año']),s=parseInt(r['Nº Semana']||r.Semana);
+    if(filtro.set?!filtro.set.has(`${a}-${s}`):a!==filtro.anio) return;
+    const k=normMenu(r.Producto); if(!k) return;
+    const v=ventas[k]||(ventas[k]={nombre:(r.Producto||'').toString().trim(),uds:0,importe:0});
+    v.uds+=parseFloat(r.Cantidad)||0; v.importe+=parseFloat(r['Ventas sin IVA'])||0;
+  });
+  const platos=[],conEscandallo=new Set();
+  rawEscandalloResumen.forEach(e=>{
+    const k=normMenu(e['Nombre Agora']); if(!k) return;
+    conEscandallo.add(k);
+    const v=ventas[k]; if(!v||v.uds<=0) return;
+    const coste=parseFloat(e['Coste racion'])||0,precio=v.importe/v.uds;
+    platos.push({nombre:e['Nombre Agora'],seccion:(e.Categoria||'Sin sección').toString().trim(),uds:v.uds,importe:v.importe,precio,coste,margen:precio-coste});
+  });
+  const sinEscandallo=Object.entries(ventas).filter(([k,v])=>!conEscandallo.has(k)&&v.uds>0&&!/^(pan|menu|copa|botella|agua|cafe)\b/.test(k))
+    .map(([,v])=>v).sort((a,b)=>b.uds-a.uds).slice(0,12);
+  return {platos,sinEscandallo};
+}
+
+function clasificarMenu(platos){
+  const totalUds=platos.reduce((s,p)=>s+p.uds,0);
+  const umbralUds=platos.length?0.7*totalUds/platos.length:0;
+  const margenMedio=totalUds?platos.reduce((s,p)=>s+p.margen*p.uds,0)/totalUds:0;
+  platos.forEach(p=>{
+    const rot=p.uds>=umbralUds,mar=p.margen>=margenMedio;
+    p.grupo=rot&&mar?'estrella':(rot?'caballo':(mar?'enigma':'perro'));
+  });
+  return {umbralUds,margenMedio,totalUds};
+}
+
+function graficoMenu(platos,ref){
+  if(!platos.length) return '';
+  const W=340,H=240,ml=38,mr=10,mt=10,mb=28,maxU=Math.max(...platos.map(p=>p.uds))*1.08,maxM=Math.max(...platos.map(p=>p.margen),ref.margenMedio)*1.12;
+  const minM=Math.min(0,...platos.map(p=>p.margen));
+  const x=u=>ml+u/maxU*(W-ml-mr),y=m=>mt+(maxM-m)/(maxM-minM)*(H-mt-mb);
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Platos según unidades vendidas y margen por ración">`;
+  s+=`<rect x="${x(ref.umbralUds)}" y="${mt}" width="${W-mr-x(ref.umbralUds)}" height="${y(ref.margenMedio)-mt}" fill="#1D9E75" opacity="0.06"/>`;
+  s+=`<line x1="${x(ref.umbralUds)}" y1="${mt}" x2="${x(ref.umbralUds)}" y2="${H-mb}" stroke="#9b9b96" stroke-dasharray="3 3"/>`;
+  s+=`<line x1="${ml}" y1="${y(ref.margenMedio)}" x2="${W-mr}" y2="${y(ref.margenMedio)}" stroke="#9b9b96" stroke-dasharray="3 3"/>`;
+  s+=`<line x1="${ml}" y1="${H-mb}" x2="${W-mr}" y2="${H-mb}" stroke="#d6d6d2"/><line x1="${ml}" y1="${mt}" x2="${ml}" y2="${H-mb}" stroke="#d6d6d2"/>`;
+  s+=`<text x="${(ml+W-mr)/2}" y="${H-6}" font-size="9" fill="#6b6b68" text-anchor="middle">Unidades vendidas →</text>`;
+  s+=`<text x="10" y="${(mt+H-mb)/2}" font-size="9" fill="#6b6b68" text-anchor="middle" transform="rotate(-90 10 ${(mt+H-mb)/2})">Margen por ración (€) →</text>`;
+  [0,maxM/2].forEach(m=>{s+=`<text x="${ml-4}" y="${y(m)+3}" font-size="8" fill="#9b9b96" text-anchor="end">${m.toFixed(0)}</text>`;});
+  s+=`<text x="${W-mr-2}" y="${mt+10}" font-size="9" fill="#1D9E75" text-anchor="end">⭐ Estrellas</text>`;
+  s+=`<text x="${ml+4}" y="${mt+10}" font-size="9" fill="#F59E0B">❓ Enigmas</text>`;
+  s+=`<text x="${W-mr-2}" y="${H-mb-4}" font-size="9" fill="#185FA5" text-anchor="end">🐴 Caballos</text>`;
+  s+=`<text x="${ml+4}" y="${H-mb-4}" font-size="9" fill="#E24B4A">🐶 Perros</text>`;
+  platos.forEach(p=>{s+=`<circle cx="${x(p.uds)}" cy="${y(p.margen)}" r="4.5" fill="${MENU_GRUPOS[p.grupo].color}" stroke="white" stroke-width="1"><title>${escHtml(p.nombre)}: ${Math.round(p.uds)} uds · ${p.margen.toFixed(2)} € de margen</title></circle>`;});
+  return s+'</svg>';
+}
+
+function renderMenu(){
+  const cont=document.getElementById('menu-contenido');
+  if(!rawEscandalloResumen.length||!rawProductos.length){cont.innerHTML='<div class="loading">Sin datos</div>';return;}
+  const {platos:todos,sinEscandallo}=datosMenu();
+  const secciones=['Todas',...new Set(rawEscandalloResumen.map(e=>(e.Categoria||'').toString().trim()).filter(Boolean))];
+  if(!secciones.includes(menuSeccion)) menuSeccion='Todas';
+  const platos=todos.filter(p=>menuSeccion==='Todas'||p.seccion===menuSeccion);
+  const ref=clasificarMenu(platos);
+  const chip=(grupo,k,v,on)=>`<button class="pl-tipo${on?' on':''}" data-${grupo}="${escHtml(k)}">${escHtml(v)}</button>`;
+  let html=`<div class="pl-tipos">${Object.entries(MENU_PERIODOS).map(([k,v])=>chip('mperiodo',k,v,k===menuPeriodo)).join('')}</div>`;
+  html+=`<div class="pl-tipos">${secciones.map(s=>chip('mseccion',s,s,s===menuSeccion)).join('')}</div>`;
+  if(!platos.length){cont.innerHTML=html+'<div class="section"><div class="loading">No hay ventas de platos con escandallo en este periodo.</div></div>';return;}
+
+  // Matriz: gráfico y resumen 2×2
+  html+=`<div class="section"><div class="section-title">Matriz · ${platos.length} platos · ${Math.round(ref.totalUds).toLocaleString('es-ES')} raciones</div>${graficoMenu(platos,ref)}
+    <div class="pc-meta" style="margin-top:6px">Rotación alta: desde ${Math.round(ref.umbralUds)} raciones. Margen alto: desde ${ref.margenMedio.toFixed(2).replace('.',',')} € por ración (media ponderada).</div>
+    <div class="menu-matriz">`;
+  ['enigma','estrella','perro','caballo'].forEach(g=>{
+    const G=MENU_GRUPOS[g],lista=platos.filter(p=>p.grupo===g);
+    html+=`<div class="menu-celda" style="border-color:${G.color}"><div class="menu-celda-tit" style="color:${G.color}">${G.icono} ${G.nombre} · ${lista.length}</div>${lista.sort((a,b)=>b.uds-a.uds).map(p=>`<div class="menu-celda-plato">${escHtml(p.nombre)}</div>`).join('')||'<div class="pc-meta">—</div>'}</div>`;
+  });
+  html+=`</div></div>`;
+
+  // Detalle por grupo
+  ['estrella','caballo','enigma','perro'].forEach(g=>{
+    const G=MENU_GRUPOS[g],lista=platos.filter(p=>p.grupo===g).sort((a,b)=>b.margen*b.uds-a.margen*a.uds);
+    if(!lista.length) return;
+    html+=`<div class="section"><div class="section-title" style="color:${G.color}">${G.icono} ${G.nombre} · ${lista.length}</div><div class="pc-meta" style="margin-bottom:8px">${G.consejo}</div>
+      <div style="overflow-x:auto"><table class="pl-tabla"><thead><tr><th>Plato</th><th>Uds</th><th>Precio</th><th>Coste</th><th>Margen</th><th>Total</th></tr></thead><tbody>
+      ${lista.map(p=>`<tr><td>${escHtml(p.nombre)}${menuSeccion==='Todas'?`<br><span class="pc-meta">${escHtml(p.seccion)} · coste ${(p.coste/p.precio*100).toFixed(0)} %</span>`:`<br><span class="pc-meta">coste ${(p.coste/p.precio*100).toFixed(0)} %</span>`}</td><td>${Math.round(p.uds).toLocaleString('es-ES')}</td><td>${p.precio.toFixed(2).replace('.',',')}</td><td>${p.coste.toFixed(2).replace('.',',')}</td><td>${p.margen.toFixed(2).replace('.',',')}</td><td>${fmtE(p.margen*p.uds)}</td></tr>`).join('')}
+      </tbody></table></div></div>`;
+  });
+
+  if(sinEscandallo.length){
+    html+=`<div class="section"><div class="section-title">Vendidos sin escandallo</div><div class="pc-meta" style="margin-bottom:8px">Estos platos no entran en la matriz porque no tienen escandallo (o en Ágora se llaman distinto). Con su coste se podrían incluir.</div>
+      <table class="pl-tabla"><tbody>${sinEscandallo.map(v=>`<tr><td>${escHtml(v.nombre)}</td><td>${Math.round(v.uds).toLocaleString('es-ES')} uds</td><td>${fmtE(v.importe)}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+  cont.innerHTML=html;
+}
+
+document.getElementById('menu-contenido').addEventListener('click',e=>{
+  const p=e.target.closest('[data-mperiodo]'),s=e.target.closest('[data-mseccion]');
+  if(p){menuPeriodo=p.dataset.mperiodo;renderMenu();}
+  if(s){menuSeccion=s.dataset.mseccion;renderMenu();}
+});
 
 // ── P&L ──────────────────────────────────────────────────────────────────────
 // Ventas y comensales de LK Diario; coste de comida, bebida y otros servicios de las facturas (Lista, por
