@@ -1558,7 +1558,7 @@ function renderMenu(){
     if(!lista.length) return;
     html+=`<div class="section"><div class="section-title" style="color:${G.color}">${G.icono} ${G.nombre} · ${lista.length}</div><div class="pc-meta" style="margin-bottom:8px">${G.consejo}</div>
       <div style="overflow-x:auto"><table class="pl-tabla"><thead><tr><th>Plato</th><th>Uds</th><th>Precio</th><th>Coste</th><th>Margen</th><th>Total</th></tr></thead><tbody>
-      ${lista.map(p=>`<tr><td>${escHtml(p.nombre)}${menuSeccion==='Todas'?`<br><span class="pc-meta">${escHtml(p.seccion)} · coste ${(p.coste/p.precio*100).toFixed(0)} %</span>`:`<br><span class="pc-meta">coste ${(p.coste/p.precio*100).toFixed(0)} %</span>`}</td><td>${Math.round(p.uds).toLocaleString('es-ES')}</td><td>${p.precio.toFixed(2).replace('.',',')}</td><td>${p.coste.toFixed(2).replace('.',',')}</td><td>${p.margen.toFixed(2).replace('.',',')}</td><td>${fmtE(p.margen*p.uds)}</td></tr>`).join('')}
+      ${lista.map(p=>`<tr><td>${escHtml(p.nombre)}${menuSeccion==='Todas'?`<br><span class="pc-meta">${escHtml(p.seccion)} · margen ${(p.margen/p.precio*100).toFixed(0)} %</span>`:`<br><span class="pc-meta">margen ${(p.margen/p.precio*100).toFixed(0)} %</span>`}</td><td>${Math.round(p.uds).toLocaleString('es-ES')}</td><td>${p.precio.toFixed(2).replace('.',',')}</td><td>${p.coste.toFixed(2).replace('.',',')}</td><td>${p.margen.toFixed(2).replace('.',',')}</td><td>${fmtE(p.margen*p.uds)}</td></tr>`).join('')}
       </tbody></table></div></div>`;
   });
 
