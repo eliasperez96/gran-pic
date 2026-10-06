@@ -112,6 +112,21 @@
   .m-rojo{color:var(--rojo);font-weight:700;}
   .obj-line{display:inline-block;width:8px;height:8px;background:rgba(0,0,0,0.25);border-radius:1px;margin-right:3px;vertical-align:middle;}
   .margen-subtitulo{font-size:10px;color:var(--texto-light);margin-bottom:8px;}
+  /* P&L */
+  .pl-tipos{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;}
+  .pl-tipo{font-size:12px;font-weight:600;padding:6px 10px;border-radius:14px;border:0.5px solid var(--gris-borde);background:var(--gris-card);color:var(--texto-muted);cursor:pointer;}
+  .pl-tipo.on{background:var(--azul-claro);color:white;border-color:transparent;}
+  .pl-tabla{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;}
+  .pl-tabla th{font-size:10px;font-weight:600;color:var(--texto-muted);text-transform:uppercase;letter-spacing:0.3px;padding:4px;text-align:right;}
+  .pl-tabla th:first-child{text-align:left;}
+  .pl-tabla td{font-size:12px;padding:6px 4px;text-align:right;border-bottom:0.5px solid var(--gris-borde);white-space:nowrap;}
+  .pl-tabla td:first-child{text-align:left;white-space:normal;}
+  .pl-tabla tr.pl-sec td{font-size:10px;font-weight:700;color:var(--azul);text-transform:uppercase;letter-spacing:0.4px;padding-top:14px;border-bottom:1px solid var(--gris-borde);}
+  .pl-tabla tr.pl-tot td{font-weight:700;}
+  .pl-tabla tr.pl-sub td:first-child{padding-left:14px;color:var(--texto-muted);}
+  .pl-tabla td.ant{color:var(--texto-muted);}
+  .pl-pos{color:var(--verde);} .pl-neg{color:var(--rojo);}
+  .pl-aviso{font-size:11px;color:#8a5a00;background:#fef6e6;border-radius:10px;padding:8px 10px;margin-bottom:10px;}
   /* Por clasificar (Facturas) */
   .pc-item{border-top:0.5px solid var(--gris-borde);padding:12px 0;display:flex;flex-direction:column;gap:8px;}
   .pc-item:first-of-type{border-top:none;padding-top:0;}
@@ -163,6 +178,7 @@
     <button class="main-tab on" data-tab="op-diaria">Op. Diaria</button>
     <button class="main-tab" data-tab="op-semanal">Op. Semanal</button>
     <button class="main-tab" data-tab="margen">Margen</button>
+    <button class="main-tab" data-tab="pl">P&amp;L</button>
     <button class="main-tab" data-tab="topventas">Top ventas</button>
     <button class="main-tab" data-tab="facturas">Facturas</button>
     <button class="main-tab" data-tab="visor">Visor facturas</button>
@@ -200,6 +216,16 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="tab-panel" id="panel-pl">
+    <div class="pl-tipos" id="pl-tipos"></div>
+    <div class="periodo-nav">
+      <button class="periodo-btn" id="pl-prev">‹</button>
+      <span class="periodo-label" id="pl-label">...</span>
+      <button class="periodo-btn" id="pl-next">›</button>
+    </div>
+    <div id="pl-contenido"></div>
   </div>
 
   <div class="tab-panel" id="panel-margen">
@@ -289,7 +315,7 @@ const DIAS=['L','M','X','J','V','S','D'];
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const OBJETIVO_MARGEN=70;
 
-let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[],rawEscandalloResumen=[],rawEscandalloDetalle=[];
+let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[],rawEscandalloResumen=[],rawEscandalloDetalle=[],rawCostesFijos=[];
 let semanas=[],opIdx=0,tvIdx=0;
 let facMes=new Date().getMonth(),facAño=new Date().getFullYear();
 let semFechasMap={};
@@ -1133,7 +1159,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 // Paquete de datos: una sola petición (?paquete=1) con las 7 pestañas, generado cada hora en Apps Script.
 // Se guarda en el móvil para enseñar al instante los datos de la última vez mientras llegan los nuevos.
 const CACHE_KEY='granpic-paquete-v1';
-const HOJAS_APP=['LK Diario','LK Productos','Lista','Maestro Proveedores','LK Semanal','Escandallo_Resumen_API','Escandallo_Detalle_API'];
+const HOJAS_APP=['LK Diario','LK Productos','Lista','Maestro Proveedores','LK Semanal','Escandallo_Resumen_API','Escandallo_Detalle_API','Costes fijos'];
 let pintado=false;
 
 function expandirTabla(t){
@@ -1154,7 +1180,7 @@ async function pedirPaqueteAntiguo(){
   const tablas=await Promise.all(HOJAS_APP.map(h=>fetch(`${API}?sheet=${encodeURIComponent(h)}`).then(r=>r.json())));
   const hojas={};
   HOJAS_APP.forEach((h,i)=>{
-    const filas=tablas[i];
+    const filas=Array.isArray(tablas[i])?tablas[i]:[];  // una pestaña que aún no existe devuelve un error
     const cols=filas.length?Object.keys(filas[0]):[];
     hojas[h]={cols,filas:filas.map(o=>cols.map(c=>o[c]))};
   });
@@ -1204,6 +1230,7 @@ function pintarPaquete(p){
   rawSemanal=expandirTabla(h['LK Semanal']);
   rawEscandalloResumen=expandirTabla(h['Escandallo_Resumen_API']);
   rawEscandalloDetalle=expandirTabla(h['Escandallo_Detalle_API']);
+  rawCostesFijos=expandirTabla(h['Costes fijos']);
   const semAntes=pintado?{op:semanas[opIdx],tv:semanas[tvIdx]}:null;
 
     // Construir lista de semanas desde columnas Año/Semana (criterio Apps Script)
@@ -1242,6 +1269,7 @@ function pintarPaquete(p){
     renderTopVentas(tvIdx);
     renderFacturas();
     renderEscandallos();
+    renderPL();
     pintado=true;
 }
 
@@ -1410,6 +1438,193 @@ function cerrarPdf(){
 document.getElementById('pdf-cerrar').addEventListener('click',cerrarPdf);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('pdf-modal').classList.contains('on'))cerrarPdf();});
 
+
+// ── P&L ──────────────────────────────────────────────────────────────────────
+// Ventas y comensales de LK Diario; coste de comida, bebida y otros servicios de las facturas (Lista, por
+// fecha de factura, según la categoría del Maestro; el alquiler es la línea 621); personal de "Costes fijos"
+// (coste del mes repartido por días). Cada periodo se compara con el mismo periodo del año anterior.
+const PL_TIPOS={semana:'Semana',p4:'4 semanas',mes:'Mes',trimestre:'Trimestre',anio:'Año'};
+const PL_MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESES_CORTOS=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+let plTipo='mes',plPeriodo=null;
+const isoDia=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const masDias=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+
+// Semanas como en el resto de la app: la 1 va del 1 de enero al primer domingo; después, de lunes a domingo
+function primerDomingo(anio){const d=new Date(anio,0,1);return masDias(d,(7-d.getDay())%7);}
+function semanaDe(d){
+  const dom=primerDomingo(d.getFullYear());
+  if(d<=dom) return 1;
+  return 2+Math.floor((d-masDias(dom,1))/86400000/7);
+}
+function rangoSemana(anio,s){
+  const dom=primerDomingo(anio),fin=new Date(anio,11,31);
+  if(s===1) return [new Date(anio,0,1),dom];
+  const ini=masDias(dom,1+(s-2)*7);
+  const f=masDias(ini,6);
+  return [ini,f>fin?fin:f];
+}
+const semanasDelAnio=anio=>semanaDe(new Date(anio,11,31));
+
+function periodoDe(tipo,d){
+  const a=d.getFullYear();
+  if(tipo==='semana') return {tipo,anio:a,n:semanaDe(d)};
+  if(tipo==='p4') return {tipo,anio:a,n:Math.min(Math.ceil(semanaDe(d)/4),Math.ceil(semanasDelAnio(a)/4))};
+  if(tipo==='mes') return {tipo,anio:a,n:d.getMonth()+1};
+  if(tipo==='trimestre') return {tipo,anio:a,n:Math.floor(d.getMonth()/3)+1};
+  return {tipo,anio:a,n:1};
+}
+function rangoPeriodo(p){
+  const a=p.anio;
+  if(p.tipo==='semana') return rangoSemana(a,p.n);
+  if(p.tipo==='p4'){
+    const ult=semanasDelAnio(a),s1=(p.n-1)*4+1,s2=p.n===Math.ceil(ult/4)?ult:Math.min(p.n*4,ult);
+    return [rangoSemana(a,s1)[0],rangoSemana(a,s2)[1]];
+  }
+  if(p.tipo==='mes') return [new Date(a,p.n-1,1),new Date(a,p.n,0)];
+  if(p.tipo==='trimestre') return [new Date(a,(p.n-1)*3,1),new Date(a,p.n*3,0)];
+  return [new Date(a,0,1),new Date(a,11,31)];
+}
+function nPeriodos(tipo,anio){
+  if(tipo==='semana') return semanasDelAnio(anio);
+  if(tipo==='p4') return Math.ceil(semanasDelAnio(anio)/4);
+  return {mes:12,trimestre:4,anio:1}[tipo];
+}
+function moverPeriodo(p,paso){
+  let {anio,n}=p; n+=paso;
+  if(n<1){anio--;n=nPeriodos(p.tipo,anio);} else if(n>nPeriodos(p.tipo,anio)){anio++;n=1;}
+  return {tipo:p.tipo,anio,n};
+}
+function etiquetaPeriodo(p){
+  const [d,h]=rangoPeriodo(p),f=x=>`${x.getDate()} ${MESES_CORTOS[x.getMonth()]}`;
+  if(p.tipo==='semana') return `S${p.n} · ${p.anio} (${f(d)}–${f(h)})`;
+  if(p.tipo==='p4') return `P${p.n} · ${p.anio} (${f(d)}–${f(h)})`;
+  if(p.tipo==='mes') return `${PL_MESES[p.n-1]} ${p.anio}`;
+  if(p.tipo==='trimestre') return `T${p.n} · ${p.anio}`;
+  return `Año ${p.anio}`;
+}
+const nombreMes=m=>`${PL_MESES[+m.slice(5)-1]} ${m.slice(0,4)}`;
+
+function mapaMaestroPL(){
+  const m={};
+  rawMaestro.forEach(r=>{
+    const n=(r['Nomenclatura Gran Pic']||'').toString().trim().toLowerCase(); if(!n) return;
+    const cat=(r['Categoría (600)']||'').toString().trim().toLowerCase();
+    const cod=(r['Código P&L']||'').toString().trim();
+    m[n]=cod==='621'?'alquiler':(cat==='comida'?'comida':(cat==='bebida'?'bebida':'otros'));
+  });
+  return m;
+}
+function mapaPersonal(){
+  const p={};
+  rawCostesFijos.forEach(x=>{const m=(x.Mes||'').toString().slice(0,7);const v=parseFloat(x.Personal);if(m&&!isNaN(v))p[m]=v;});
+  return p;
+}
+
+function datosPL(desde,hasta){
+  const d0=isoDia(desde),d1=isoDia(hasta);
+  const r={comensales:0,comComida:0,comCena:0,ventas:0,vComida:0,vBebida:0,cComida:0,cBebida:0,alquiler:0,otros:0,personal:0,diasVentas:0,mesesSinPersonal:new Set()};
+  const dias=new Set(),n=v=>parseFloat(v)||0;
+  rawDiario.forEach(x=>{
+    const f=(x.Fecha||'').toString().slice(0,10); if(f<d0||f>d1) return;
+    const t=(x.Turno||'').toString().toLowerCase();
+    if(t==='total'){r.comensales+=n(x.Comensales);r.ventas+=n(x['Ventas sin IVA']);r.vComida+=n(x['Comida sin IVA']);r.vBebida+=n(x['Bebida sin IVA']);dias.add(f);}
+    else if(t.includes('almuerzo')) r.comComida+=n(x.Comensales);
+    else if(t.includes('cena')) r.comCena+=n(x.Comensales);
+  });
+  r.diasVentas=dias.size;
+  const cats=mapaMaestroPL();
+  rawFacturas.forEach(x=>{
+    const f=(x.Fecha||'').toString().slice(0,10); if(f<d0||f>d1) return;
+    const base=n(x['Base Imponible (€)']||x['Base Imponible']),total=n(x['Total (€)']||x['Total']);
+    const importe=base||total;  // si la factura no tiene base, al menos el total
+    const c=cats[(x.Proveedor||'').toString().trim().toLowerCase()]||'otros';
+    if(c==='comida') r.cComida+=importe; else if(c==='bebida') r.cBebida+=importe; else if(c==='alquiler') r.alquiler+=importe; else r.otros+=importe;
+  });
+  // Personal: el coste del mes se reparte por días (solo hasta hoy)
+  const personal=mapaPersonal(),hoy=new Date();
+  for(let d=new Date(desde);d<=hasta&&d<=hoy;d=masDias(d,1)){
+    const m=isoDia(d).slice(0,7);
+    if(personal[m]===undefined){r.mesesSinPersonal.add(m);continue;}
+    r.personal+=personal[m]/new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  }
+  r.coste=r.cComida+r.cBebida;
+  r.margen=r.ventas-r.coste; r.mComida=r.vComida-r.cComida; r.mBebida=r.vBebida-r.cBebida;
+  r.fijos=r.personal+r.alquiler+r.otros;
+  r.ebitda=r.margen-r.fijos;
+  r.ticket=r.comensales?r.ventas/r.comensales:0;
+  return r;
+}
+
+const fmtPct=(a,b)=>b?(a/b*100).toFixed(1).replace('.',',')+' %':'–';
+
+function renderPL(){
+  document.getElementById('pl-tipos').innerHTML=Object.entries(PL_TIPOS).map(([k,v])=>`<button class="pl-tipo${k===plTipo?' on':''}" data-tipo="${k}">${v}</button>`).join('');
+  if(!plPeriodo) plPeriodo=periodoDe(plTipo,masDias(new Date(),-1));
+  const [d,h]=rangoPeriodo(plPeriodo);
+  const pa={tipo:plPeriodo.tipo,anio:plPeriodo.anio-1,n:Math.min(plPeriodo.n,nPeriodos(plPeriodo.tipo,plPeriodo.anio-1))};
+  const [da,ha]=rangoPeriodo(pa);
+  document.getElementById('pl-label').textContent=etiquetaPeriodo(plPeriodo);
+  const A=datosPL(d,h),B=datosPL(da,ha);
+  const delta=(a,b,coste)=>{if(!b) return '';const p=(a-b)/Math.abs(b)*100;const bueno=coste?p<=0:p>=0;return `<span class="${bueno?'pl-pos':'pl-neg'}">${p>=0?'+':''}${p.toFixed(0)} %</span>`;};
+  const fila=(t,a,b,o={})=>`<tr class="${o.cls||''}"><td>${t}</td><td>${o.fmt?o.fmt(a):fmtE(a)}</td><td class="ant">${o.fmt?o.fmt(b):fmtE(b)}</td><td>${delta(a,b,o.coste)}</td></tr>`;
+  const pct=(t,a,b,ba,bb)=>`<tr class="pl-sub"><td>${t}</td><td>${fmtPct(a,ba)}</td><td class="ant">${fmtPct(b,bb)}</td><td></td></tr>`;
+  const sec=t=>`<tr class="pl-sec"><td colspan="4">${t}</td></tr>`;
+  const ent=x=>Math.round(x).toLocaleString('es-ES');
+  let html='';
+  const sinPersonal=[...A.mesesSinPersonal].sort();
+  if(sinPersonal.length) html+=`<div class="pl-aviso">Falta el coste de personal de ${sinPersonal.map(nombreMes).join(', ')}: el EBITDA sale más alto de lo real. Añádelo abajo.</div>`;
+  if(!A.diasVentas) html+=`<div class="pl-aviso">No hay ventas registradas en este periodo.</div>`;
+  html+=`<div class="section"><table class="pl-tabla"><thead><tr><th></th><th>${plPeriodo.anio}</th><th>${pa.anio}</th><th>Var.</th></tr></thead><tbody>`;
+  html+=sec('Comensales')+fila('Totales',A.comensales,B.comensales,{fmt:ent,cls:'pl-tot'})+fila('Comida',A.comComida,B.comComida,{fmt:ent,cls:'pl-sub'})+fila('Cena',A.comCena,B.comCena,{fmt:ent,cls:'pl-sub'});
+  html+=sec('Ventas (sin IVA)')+fila('Ventas totales',A.ventas,B.ventas,{cls:'pl-tot'})+fila('Comida',A.vComida,B.vComida,{cls:'pl-sub'})+fila('Bebida',A.vBebida,B.vBebida,{cls:'pl-sub'})+fila('Ticket medio',A.ticket,B.ticket,{fmt:x=>x.toFixed(1).replace('.',',')+' €',cls:'pl-sub'});
+  html+=sec('Coste de mercaderías')+fila('Comida',A.cComida,B.cComida,{coste:true,cls:'pl-sub'})+fila('Bebida',A.cBebida,B.cBebida,{coste:true,cls:'pl-sub'})+fila('Total',A.coste,B.coste,{coste:true,cls:'pl-tot'});
+  html+=sec('Margen bruto')+fila('Margen bruto',A.margen,B.margen,{cls:'pl-tot'})+pct('% sobre ventas',A.margen,B.margen,A.ventas,B.ventas)
+       +fila('Comida',A.mComida,B.mComida,{cls:'pl-sub'})+pct('% sobre ventas de comida',A.mComida,B.mComida,A.vComida,B.vComida)
+       +fila('Bebida',A.mBebida,B.mBebida,{cls:'pl-sub'})+pct('% sobre ventas de bebida',A.mBebida,B.mBebida,A.vBebida,B.vBebida);
+  html+=sec('Costes fijos')+fila('Personal',A.personal,B.personal,{coste:true,cls:'pl-sub'})+fila('Alquiler',A.alquiler,B.alquiler,{coste:true,cls:'pl-sub'})+fila('Otros servicios',A.otros,B.otros,{coste:true,cls:'pl-sub'})+fila('Total',A.fijos,B.fijos,{coste:true,cls:'pl-tot'});
+  html+=sec('EBITDA')+fila('EBITDA',A.ebitda,B.ebitda,{cls:'pl-tot'})+pct('% sobre ventas',A.ebitda,B.ebitda,A.ventas,B.ventas);
+  html+=`</tbody></table></div>`;
+
+  // Coste de personal: meses del periodo y el anterior, editable con el PIN
+  const meses=[];for(let x=new Date(d.getFullYear(),d.getMonth()-1,1);x<=h;x=new Date(x.getFullYear(),x.getMonth()+1,1)) meses.push(isoDia(x).slice(0,7));
+  const personal=mapaPersonal();
+  const mesDefecto=sinPersonal[0]||meses[meses.length-1];
+  html+=`<div class="section"><div class="section-title">Coste de personal del mes</div>
+    <div class="pc-meta" style="margin-bottom:8px">Coste total de empresa (sueldos + Seguridad Social) de todo el mes.</div>
+    ${leerPin()?'':'<div class="pc-fila" style="margin-bottom:8px"><input id="pl-pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN de la app"></div>'}
+    <div class="pc-fila"><select id="pl-mes">${meses.slice().reverse().map(m=>`<option value="${m}"${m===mesDefecto?' selected':''}>${nombreMes(m)}${personal[m]!==undefined?' · '+fmtE(personal[m]):' · sin dato'}</option>`).join('')}</select>
+    <input id="pl-importe" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Importe €"><button class="pc-btn pri" id="pl-guardar">Guardar</button></div>
+    <div class="pc-msg" id="pl-msg"></div></div>`;
+  document.getElementById('pl-contenido').innerHTML=html;
+}
+
+document.getElementById('pl-tipos').addEventListener('click',e=>{
+  const b=e.target.closest('[data-tipo]'); if(!b) return;
+  plTipo=b.dataset.tipo;
+  const ref=plPeriodo?rangoPeriodo(plPeriodo)[0]:masDias(new Date(),-1);
+  plPeriodo=periodoDe(plTipo,ref);
+  renderPL();
+});
+document.getElementById('pl-prev').addEventListener('click',()=>{plPeriodo=moverPeriodo(plPeriodo,-1);renderPL();});
+document.getElementById('pl-next').addEventListener('click',()=>{plPeriodo=moverPeriodo(plPeriodo,1);renderPL();});
+document.getElementById('pl-contenido').addEventListener('click',async e=>{
+  if(e.target.id!=='pl-guardar') return;
+  const msg=document.getElementById('pl-msg'),b=e.target;
+  const campoPin=document.getElementById('pl-pin');
+  const pin=leerPin()||(campoPin?campoPin.value.trim():'');
+  const mes=document.getElementById('pl-mes').value,importe=parseFloat(document.getElementById('pl-importe').value);
+  if(!pin){msg.className='pc-msg err';msg.textContent='Escribe el PIN de la app.';return;}
+  if(isNaN(importe)||importe<0){msg.className='pc-msg err';msg.textContent='Escribe el importe del mes.';return;}
+  b.disabled=true;msg.className='pc-msg';msg.textContent='Guardando…';
+  try{
+    const r=await fetch(API,{method:'POST',body:JSON.stringify({pin,accion:'costePersonal',mes,importe})}).then(x=>x.json());
+    if(r.error){if(r.error==='PIN incorrecto')guardarPin('');throw new Error(r.error);}
+    guardarPin(pin);
+    msg.className='pc-msg ok';msg.textContent=`Guardado: ${nombreMes(mes)}, ${fmtE(r.importe)}. Actualizando…`;
+    cargarDatos();
+  }catch(err){msg.className='pc-msg err';msg.textContent='No se ha guardado: '+err.message;b.disabled=false;}
+});
 
 // ── Por clasificar ───────────────────────────────────────────────────────────
 // Facturas cuyo proveedor no está en el Maestro. Se asignan a un proveedor existente o se da de alta uno
