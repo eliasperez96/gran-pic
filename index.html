@@ -1641,10 +1641,14 @@ function etiquetaPeriodo(p){
 }
 const nombreMes=m=>`${PL_MESES[+m.slice(5)-1]} ${m.slice(0,4)}`;
 
-// Gastos que no llegan como factura por correo, estimados con las cuentas del gestor de 2026
-// (cuentas 626 y 625) hasta que los movimientos del banco los den exactos.
-// Banco: ~283 € fijos al mes + 0,24 % de las ventas (comisión del datáfono).
-const PL_ESTIMADOS={bancoFijoMes:283,bancoPctVentas:0.0024,segurosMes:240.59};
+// Gastos que no llegan como factura por correo, estimados por año con las cuentas del gestor
+// (626 banco y datáfono: fijo al mes + % de las ventas; 625 seguros) hasta que el banco los dé exactos.
+// Un año sin datos usa el último conocido.
+const PL_ESTIMADOS={
+  2025:{bancoFijoMes:107,bancoPctVentas:0.0044,segurosMes:80.66},
+  2026:{bancoFijoMes:283,bancoPctVentas:0.0024,segurosMes:240.59},
+};
+const estimadosDe=anio=>{const a=Object.keys(PL_ESTIMADOS).map(Number).sort((x,y)=>x-y);return PL_ESTIMADOS[a.filter(x=>x<=anio).pop()||a[0]];};
 
 function mapaMaestroPL(){
   const m={};
@@ -1664,12 +1668,12 @@ function mapaPersonal(){
 
 function datosPL(desde,hasta){
   const d0=isoDia(desde),d1=isoDia(hasta);
-  const r={comensales:0,comComida:0,comCena:0,ventas:0,vComida:0,vBebida:0,cComida:0,cBebida:0,alquiler:0,otros:0,personal:0,diasVentas:0,mesesSinPersonal:new Set()};
+  const r={comensales:0,comComida:0,comCena:0,ventas:0,vComida:0,vBebida:0,cComida:0,cBebida:0,alquiler:0,otros:0,personal:0,bancoVar:0,diasVentas:0,mesesSinPersonal:new Set()};
   const dias=new Set(),n=v=>parseFloat(v)||0;
   rawDiario.forEach(x=>{
     const f=(x.Fecha||'').toString().slice(0,10); if(f<d0||f>d1) return;
     const t=(x.Turno||'').toString().toLowerCase();
-    if(t==='total'){r.comensales+=n(x.Comensales);r.ventas+=n(x['Ventas sin IVA']);r.vComida+=n(x['Comida sin IVA']);r.vBebida+=n(x['Bebida sin IVA']);dias.add(f);}
+    if(t==='total'){r.comensales+=n(x.Comensales);r.ventas+=n(x['Ventas sin IVA']);r.bancoVar+=n(x['Ventas sin IVA'])*estimadosDe(+f.slice(0,4)).bancoPctVentas;r.vComida+=n(x['Comida sin IVA']);r.vBebida+=n(x['Bebida sin IVA']);dias.add(f);}
     else if(t.includes('almuerzo')) r.comComida+=n(x.Comensales);
     else if(t.includes('cena')) r.comCena+=n(x.Comensales);
   });
@@ -1687,13 +1691,14 @@ function datosPL(desde,hasta){
   r.banco=0;r.seguros=0;
   for(let d=new Date(desde);d<=hasta&&d<=hoy;d=masDias(d,1)){
     const diasMes=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
-    r.banco+=PL_ESTIMADOS.bancoFijoMes/diasMes;
-    r.seguros+=PL_ESTIMADOS.segurosMes/diasMes;
+    const est=estimadosDe(d.getFullYear());
+    r.banco+=est.bancoFijoMes/diasMes;
+    r.seguros+=est.segurosMes/diasMes;
     const m=isoDia(d).slice(0,7);
     if(personal[m]===undefined){r.mesesSinPersonal.add(m);continue;}
     r.personal+=personal[m]/diasMes;
   }
-  r.banco+=r.ventas*PL_ESTIMADOS.bancoPctVentas;
+  r.banco+=r.bancoVar;
   r.coste=r.cComida+r.cBebida;
   r.margen=r.ventas-r.coste; r.mComida=r.vComida-r.cComida; r.mBebida=r.vBebida-r.cBebida;
   r.fijos=r.personal+r.alquiler+r.otros+r.banco+r.seguros;
