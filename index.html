@@ -1579,7 +1579,7 @@ document.getElementById('menu-contenido').addEventListener('click',e=>{
 // Ventas y comensales de LK Diario; coste de comida, bebida y otros servicios de las facturas (Lista, por
 // fecha de factura, según la categoría del Maestro; el alquiler es la línea 621); personal de "Costes fijos"
 // (coste del mes repartido por días). Cada periodo se compara con el mismo periodo del año anterior.
-const PL_TIPOS={semana:'Semana',p4:'4 semanas',mes:'Mes',trimestre:'Trimestre',anio:'Año'};
+const PL_TIPOS={semana:'Semana',p4:'4 semanas',mes:'Mes',trimestre:'Trimestre',anio:'Año',ltm:'Últimos 12 meses'};
 const PL_MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MESES_CORTOS=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 let plTipo='mes',plPeriodo=null;
@@ -1606,7 +1606,7 @@ function periodoDe(tipo,d){
   const a=d.getFullYear();
   if(tipo==='semana') return {tipo,anio:a,n:semanaDe(d)};
   if(tipo==='p4') return {tipo,anio:a,n:Math.min(Math.ceil(semanaDe(d)/4),Math.ceil(semanasDelAnio(a)/4))};
-  if(tipo==='mes') return {tipo,anio:a,n:d.getMonth()+1};
+  if(tipo==='mes'||tipo==='ltm') return {tipo,anio:a,n:d.getMonth()+1};  // ltm: los 12 meses que acaban en ese mes
   if(tipo==='trimestre') return {tipo,anio:a,n:Math.floor(d.getMonth()/3)+1};
   return {tipo,anio:a,n:1};
 }
@@ -1618,13 +1618,14 @@ function rangoPeriodo(p){
     return [rangoSemana(a,s1)[0],rangoSemana(a,s2)[1]];
   }
   if(p.tipo==='mes') return [new Date(a,p.n-1,1),new Date(a,p.n,0)];
+  if(p.tipo==='ltm') return [new Date(a,p.n-12,1),new Date(a,p.n,0)];
   if(p.tipo==='trimestre') return [new Date(a,(p.n-1)*3,1),new Date(a,p.n*3,0)];
   return [new Date(a,0,1),new Date(a,11,31)];
 }
 function nPeriodos(tipo,anio){
   if(tipo==='semana') return semanasDelAnio(anio);
   if(tipo==='p4') return Math.ceil(semanasDelAnio(anio)/4);
-  return {mes:12,trimestre:4,anio:1}[tipo];
+  return {mes:12,ltm:12,trimestre:4,anio:1}[tipo];
 }
 function moverPeriodo(p,paso){
   let {anio,n}=p; n+=paso;
@@ -1637,6 +1638,7 @@ function etiquetaPeriodo(p){
   if(p.tipo==='p4') return `P${p.n} · ${p.anio} (${f(d)}–${f(h)})`;
   if(p.tipo==='mes') return `${PL_MESES[p.n-1]} ${p.anio}`;
   if(p.tipo==='trimestre') return `T${p.n} · ${p.anio}`;
+  if(p.tipo==='ltm') return `${MESES_CORTOS[d.getMonth()]} ${d.getFullYear()} – ${MESES_CORTOS[h.getMonth()]} ${h.getFullYear()}`;
   return `Año ${p.anio}`;
 }
 const nombreMes=m=>`${PL_MESES[+m.slice(5)-1]} ${m.slice(0,4)}`;
@@ -1726,7 +1728,7 @@ function renderPL(){
   const sinPersonal=[...A.mesesSinPersonal].sort();
   if(sinPersonal.length) html+=`<div class="pl-aviso">Falta el coste de personal de ${sinPersonal.map(nombreMes).join(', ')}: el EBITDA sale más alto de lo real. Añádelo abajo.</div>`;
   if(!A.diasVentas) html+=`<div class="pl-aviso">No hay ventas registradas en este periodo.</div>`;
-  html+=`<div class="section"><table class="pl-tabla"><thead><tr><th></th><th>${plPeriodo.anio}</th><th>${pa.anio}</th><th>Var.</th></tr></thead><tbody>`;
+  html+=`<div class="section"><table class="pl-tabla"><thead><tr><th></th><th>${plPeriodo.tipo==='ltm'?'12 meses':plPeriodo.anio}</th><th>${plPeriodo.tipo==='ltm'?'12 previos':pa.anio}</th><th>Var.</th></tr></thead><tbody>`;
   html+=sec('Comensales')+fila('Totales',A.comensales,B.comensales,{fmt:ent,cls:'pl-tot'})+fila('Comida',A.comComida,B.comComida,{fmt:ent,cls:'pl-sub'})+fila('Cena',A.comCena,B.comCena,{fmt:ent,cls:'pl-sub'});
   html+=sec('Ventas (sin IVA)')+fila('Ventas totales',A.ventas,B.ventas,{cls:'pl-tot'})+fila('Comida',A.vComida,B.vComida,{cls:'pl-sub'})+fila('Bebida',A.vBebida,B.vBebida,{cls:'pl-sub'})+fila('Ticket medio',A.ticket,B.ticket,{fmt:x=>x.toFixed(1).replace('.',',')+' €',cls:'pl-sub'});
   html+=sec('Coste de mercaderías')+fila('Comida',A.cComida,B.cComida,{coste:true,cls:'pl-sub'})+fila('Bebida',A.cBebida,B.cBebida,{coste:true,cls:'pl-sub'})+fila('Total',A.coste,B.coste,{coste:true,cls:'pl-tot'});
