@@ -1688,6 +1688,21 @@ function datosPL(desde,hasta){
     const c=cats[(x.Proveedor||'').toString().trim().toLowerCase()]||'otros';
     if(c==='comida') r.cComida+=importe; else if(c==='bebida') r.cBebida+=importe; else if(c==='alquiler') r.alquiler+=importe; else r.otros+=importe;
   });
+  // Margen teórico: platos vendidos (LK Productos, por semanas) × coste de su escandallo.
+  // Las semanas que caen en parte dentro del periodo cuentan en proporción a sus días.
+  const costeEsc={};
+  rawEscandalloResumen.forEach(e=>{const k=normMenu(e['Nombre Agora']);const c=parseFloat(e['Coste racion']);if(k&&!isNaN(c))costeEsc[k]=c;});
+  r.vCubiertas=0;r.costeTeorico=0;
+  const semCache={};
+  rawProductos.forEach(x=>{
+    const c=costeEsc[normMenu(x.Producto)]; if(c===undefined) return;
+    const a=parseInt(x['Año']),s=parseInt(x['Nº Semana']); if(!a||!s) return;
+    const [ini,fin]=semCache[a+'-'+s]||(semCache[a+'-'+s]=rangoSemana(a,s));
+    const i0=ini<desde?desde:ini,f0=fin>hasta?hasta:fin; if(i0>f0) return;
+    const frac=(Math.round((f0-i0)/86400000)+1)/(Math.round((fin-ini)/86400000)+1);
+    r.vCubiertas+=n(x['Ventas sin IVA'])*frac; r.costeTeorico+=n(x.Cantidad)*frac*c;
+  });
+  r.mTeorico=r.vCubiertas-r.costeTeorico;
   // Personal y gastos estimados sin factura: el importe del mes se reparte por días (solo hasta hoy)
   const personal=mapaPersonal(),hoy=new Date();
   r.banco=0;r.seguros=0;
@@ -1703,6 +1718,8 @@ function datosPL(desde,hasta){
   r.banco+=r.bancoVar;
   r.coste=r.cComida+r.cBebida;
   r.margen=r.ventas-r.coste; r.mComida=r.vComida-r.cComida; r.mBebida=r.vBebida-r.cBebida;
+  // Diferencia entre el margen de comida que dicen los escandallos y el real, llevada a euros de ventas de comida
+  r.fugaComida=r.vCubiertas&&r.vComida?(r.mTeorico/r.vCubiertas-r.mComida/r.vComida)*r.vComida:0;
   r.fijos=r.personal+r.alquiler+r.otros+r.banco+r.seguros;
   r.ebitda=r.margen-r.fijos;
   r.ticket=r.comensales?r.ventas/r.comensales:0;
@@ -1735,6 +1752,12 @@ function renderPL(){
   html+=sec('Margen bruto')+fila('Margen bruto',A.margen,B.margen,{cls:'pl-tot'})+pct('% sobre ventas',A.margen,B.margen,A.ventas,B.ventas)
        +fila('Comida',A.mComida,B.mComida,{cls:'pl-sub'})+pct('% sobre ventas de comida',A.mComida,B.mComida,A.vComida,B.vComida)
        +fila('Bebida',A.mBebida,B.mBebida,{cls:'pl-sub'})+pct('% sobre ventas de bebida',A.mBebida,B.mBebida,A.vBebida,B.vBebida);
+  html+=sec('Margen teórico de comida (escandallos)')
+       +fila('Ventas de platos con escandallo',A.vCubiertas,B.vCubiertas,{cls:'pl-sub'})+pct('% de las ventas de comida',A.vCubiertas,B.vCubiertas,A.vComida,B.vComida)
+       +fila('Coste teórico de lo vendido',A.costeTeorico,B.costeTeorico,{coste:true,cls:'pl-sub'})
+       +pct('Margen teórico',A.mTeorico,B.mTeorico,A.vCubiertas,B.vCubiertas)
+       +pct('Margen real de comida',A.mComida,B.mComida,A.vComida,B.vComida)
+       +fila('Diferencia en € (mermas, raciones, stock)',A.fugaComida,B.fugaComida,{coste:true,cls:'pl-tot'});
   html+=sec('Costes fijos')+fila('Personal',A.personal,B.personal,{coste:true,cls:'pl-sub'})+fila('Alquiler',A.alquiler,B.alquiler,{coste:true,cls:'pl-sub'})+fila('Otros servicios',A.otros,B.otros,{coste:true,cls:'pl-sub'})+fila('Banco y datáfono (estimado)',A.banco,B.banco,{coste:true,cls:'pl-sub'})+fila('Seguros (estimado)',A.seguros,B.seguros,{coste:true,cls:'pl-sub'})+fila('Total',A.fijos,B.fijos,{coste:true,cls:'pl-tot'});
   html+=sec('EBITDA')+fila('EBITDA',A.ebitda,B.ebitda,{cls:'pl-tot'})+pct('% sobre ventas',A.ebitda,B.ebitda,A.ventas,B.ventas);
   html+=`</tbody></table></div>`;
