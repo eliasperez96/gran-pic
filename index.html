@@ -1743,7 +1743,7 @@ function renderPL(){
   const ent=x=>Math.round(x).toLocaleString('es-ES');
   let html='';
   const sinPersonal=[...A.mesesSinPersonal].sort();
-  if(sinPersonal.length) html+=`<div class="pl-aviso">Falta el coste de personal de ${sinPersonal.map(nombreMes).join(', ')}: el EBITDA sale más alto de lo real. Añádelo abajo.</div>`;
+  if(sinPersonal.length) html+=`<div class="pl-aviso">Falta el coste de personal de ${sinPersonal.map(nombreMes).join(', ')}: el EBITDA sale más alto de lo real (las nóminas se leen solas del correo).</div>`;
   if(!A.diasVentas) html+=`<div class="pl-aviso">No hay ventas registradas en este periodo.</div>`;
   html+=`<div class="section"><table class="pl-tabla"><thead><tr><th></th><th>${plPeriodo.tipo==='ltm'?'12 meses':plPeriodo.anio}</th><th>${plPeriodo.tipo==='ltm'?'12 previos':pa.anio}</th><th>Var.</th></tr></thead><tbody>`;
   html+=sec('Comensales')+fila('Totales',A.comensales,B.comensales,{fmt:ent,cls:'pl-tot'})+fila('Comida',A.comComida,B.comComida,{fmt:ent,cls:'pl-sub'})+fila('Cena',A.comCena,B.comCena,{fmt:ent,cls:'pl-sub'});
@@ -1762,16 +1762,6 @@ function renderPL(){
   html+=sec('EBITDA')+fila('EBITDA',A.ebitda,B.ebitda,{cls:'pl-tot'})+pct('% sobre ventas',A.ebitda,B.ebitda,A.ventas,B.ventas);
   html+=`</tbody></table></div>`;
 
-  // Coste de personal: meses del periodo y el anterior, editable con el PIN
-  const meses=[];for(let x=new Date(d.getFullYear(),d.getMonth()-1,1);x<=h;x=new Date(x.getFullYear(),x.getMonth()+1,1)) meses.push(isoDia(x).slice(0,7));
-  const personal=mapaPersonal();
-  const mesDefecto=sinPersonal[0]||meses[meses.length-1];
-  html+=`<div class="section"><div class="section-title">Coste de personal del mes</div>
-    <div class="pc-meta" style="margin-bottom:8px">Coste total de empresa (sueldos + Seguridad Social) de todo el mes.</div>
-    ${leerPin()?'':'<div class="pc-fila" style="margin-bottom:8px"><input id="pl-pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN de la app"></div>'}
-    <div class="pc-fila"><select id="pl-mes">${meses.slice().reverse().map(m=>`<option value="${m}"${m===mesDefecto?' selected':''}>${nombreMes(m)}${personal[m]!==undefined?' · '+fmtE(personal[m]):' · sin dato'}</option>`).join('')}</select>
-    <input id="pl-importe" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Importe €"><button class="pc-btn pri" id="pl-guardar">Guardar</button></div>
-    <div class="pc-msg" id="pl-msg"></div></div>`;
   document.getElementById('pl-contenido').innerHTML=html;
 }
 
@@ -1784,24 +1774,6 @@ document.getElementById('pl-tipos').addEventListener('click',e=>{
 });
 document.getElementById('pl-prev').addEventListener('click',()=>{plPeriodo=moverPeriodo(plPeriodo,-1);renderPL();});
 document.getElementById('pl-next').addEventListener('click',()=>{plPeriodo=moverPeriodo(plPeriodo,1);renderPL();});
-document.getElementById('pl-contenido').addEventListener('click',async e=>{
-  if(e.target.id!=='pl-guardar') return;
-  const msg=document.getElementById('pl-msg'),b=e.target;
-  const campoPin=document.getElementById('pl-pin');
-  const pin=leerPin()||(campoPin?campoPin.value.trim():'');
-  const mes=document.getElementById('pl-mes').value,importe=parseFloat(document.getElementById('pl-importe').value);
-  if(!pin){msg.className='pc-msg err';msg.textContent='Escribe el PIN de la app.';return;}
-  if(isNaN(importe)||importe<0){msg.className='pc-msg err';msg.textContent='Escribe el importe del mes.';return;}
-  b.disabled=true;msg.className='pc-msg';msg.textContent='Guardando…';
-  try{
-    const r=await fetch(API,{method:'POST',body:JSON.stringify({pin,accion:'costePersonal',mes,importe})}).then(x=>x.json());
-    if(r.error){if(r.error==='PIN incorrecto')guardarPin('');throw new Error(r.error);}
-    guardarPin(pin);
-    msg.className='pc-msg ok';msg.textContent=`Guardado: ${nombreMes(mes)}, ${fmtE(r.importe)}. Actualizando…`;
-    cargarDatos();
-  }catch(err){msg.className='pc-msg err';msg.textContent='No se ha guardado: '+err.message;b.disabled=false;}
-});
-
 // ── Por clasificar ───────────────────────────────────────────────────────────
 // Facturas cuyo proveedor no está en el Maestro. Se asignan a un proveedor existente o se da de alta uno
 // nuevo (Comida, Bebida u Otros servicios). Lo guarda Apps Script (doPost) con el PIN de la app, y el
