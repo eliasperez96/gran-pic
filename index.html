@@ -1641,6 +1641,11 @@ function etiquetaPeriodo(p){
 }
 const nombreMes=m=>`${PL_MESES[+m.slice(5)-1]} ${m.slice(0,4)}`;
 
+// Gastos que no llegan como factura por correo, estimados con las cuentas del gestor de 2026
+// (cuentas 626 y 625) hasta que los movimientos del banco los den exactos.
+// Banco: ~283 € fijos al mes + 0,24 % de las ventas (comisión del datáfono).
+const PL_ESTIMADOS={bancoFijoMes:283,bancoPctVentas:0.0024,segurosMes:240.59};
+
 function mapaMaestroPL(){
   const m={};
   rawMaestro.forEach(r=>{
@@ -1677,16 +1682,21 @@ function datosPL(desde,hasta){
     const c=cats[(x.Proveedor||'').toString().trim().toLowerCase()]||'otros';
     if(c==='comida') r.cComida+=importe; else if(c==='bebida') r.cBebida+=importe; else if(c==='alquiler') r.alquiler+=importe; else r.otros+=importe;
   });
-  // Personal: el coste del mes se reparte por días (solo hasta hoy)
+  // Personal y gastos estimados sin factura: el importe del mes se reparte por días (solo hasta hoy)
   const personal=mapaPersonal(),hoy=new Date();
+  r.banco=0;r.seguros=0;
   for(let d=new Date(desde);d<=hasta&&d<=hoy;d=masDias(d,1)){
+    const diasMes=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+    r.banco+=PL_ESTIMADOS.bancoFijoMes/diasMes;
+    r.seguros+=PL_ESTIMADOS.segurosMes/diasMes;
     const m=isoDia(d).slice(0,7);
     if(personal[m]===undefined){r.mesesSinPersonal.add(m);continue;}
-    r.personal+=personal[m]/new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+    r.personal+=personal[m]/diasMes;
   }
+  r.banco+=r.ventas*PL_ESTIMADOS.bancoPctVentas;
   r.coste=r.cComida+r.cBebida;
   r.margen=r.ventas-r.coste; r.mComida=r.vComida-r.cComida; r.mBebida=r.vBebida-r.cBebida;
-  r.fijos=r.personal+r.alquiler+r.otros;
+  r.fijos=r.personal+r.alquiler+r.otros+r.banco+r.seguros;
   r.ebitda=r.margen-r.fijos;
   r.ticket=r.comensales?r.ventas/r.comensales:0;
   return r;
@@ -1718,7 +1728,7 @@ function renderPL(){
   html+=sec('Margen bruto')+fila('Margen bruto',A.margen,B.margen,{cls:'pl-tot'})+pct('% sobre ventas',A.margen,B.margen,A.ventas,B.ventas)
        +fila('Comida',A.mComida,B.mComida,{cls:'pl-sub'})+pct('% sobre ventas de comida',A.mComida,B.mComida,A.vComida,B.vComida)
        +fila('Bebida',A.mBebida,B.mBebida,{cls:'pl-sub'})+pct('% sobre ventas de bebida',A.mBebida,B.mBebida,A.vBebida,B.vBebida);
-  html+=sec('Costes fijos')+fila('Personal',A.personal,B.personal,{coste:true,cls:'pl-sub'})+fila('Alquiler',A.alquiler,B.alquiler,{coste:true,cls:'pl-sub'})+fila('Otros servicios',A.otros,B.otros,{coste:true,cls:'pl-sub'})+fila('Total',A.fijos,B.fijos,{coste:true,cls:'pl-tot'});
+  html+=sec('Costes fijos')+fila('Personal',A.personal,B.personal,{coste:true,cls:'pl-sub'})+fila('Alquiler',A.alquiler,B.alquiler,{coste:true,cls:'pl-sub'})+fila('Otros servicios',A.otros,B.otros,{coste:true,cls:'pl-sub'})+fila('Banco y datáfono (estimado)',A.banco,B.banco,{coste:true,cls:'pl-sub'})+fila('Seguros (estimado)',A.seguros,B.seguros,{coste:true,cls:'pl-sub'})+fila('Total',A.fijos,B.fijos,{coste:true,cls:'pl-tot'});
   html+=sec('EBITDA')+fila('EBITDA',A.ebitda,B.ebitda,{cls:'pl-tot'})+pct('% sobre ventas',A.ebitda,B.ebitda,A.ventas,B.ventas);
   html+=`</tbody></table></div>`;
 
