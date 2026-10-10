@@ -325,7 +325,7 @@ const DIAS=['L','M','X','J','V','S','D'];
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const OBJETIVO_MARGEN=70;
 
-let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[],rawEscandalloResumen=[],rawEscandalloDetalle=[],rawCostesFijos=[];
+let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[],rawEscandalloResumen=[],rawEscandalloDetalle=[],rawCostesFijos=[],rawCostesExtra=[];
 let semanas=[],opIdx=0,tvIdx=0;
 let facMes=new Date().getMonth(),facAño=new Date().getFullYear();
 let semFechasMap={};
@@ -1169,7 +1169,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 // Paquete de datos: una sola petición (?paquete=1) con las 7 pestañas, generado cada hora en Apps Script.
 // Se guarda en el móvil para enseñar al instante los datos de la última vez mientras llegan los nuevos.
 const CACHE_KEY='granpic-paquete-v1';
-const HOJAS_APP=['LK Diario','LK Productos','Lista','Maestro Proveedores','LK Semanal','Escandallo_Resumen_API','Escandallo_Detalle_API','Costes fijos'];
+const HOJAS_APP=['LK Diario','LK Productos','Lista','Maestro Proveedores','LK Semanal','Escandallo_Resumen_API','Escandallo_Detalle_API','Costes fijos','Costes sin escandallo'];
 let pintado=false;
 
 function expandirTabla(t){
@@ -1241,6 +1241,7 @@ function pintarPaquete(p){
   rawEscandalloResumen=expandirTabla(h['Escandallo_Resumen_API']);
   rawEscandalloDetalle=expandirTabla(h['Escandallo_Detalle_API']);
   rawCostesFijos=expandirTabla(h['Costes fijos']);
+  rawCostesExtra=expandirTabla(h['Costes sin escandallo']);
   const semAntes=pintado?{op:semanas[opIdx],tv:semanas[tvIdx]}:null;
 
     // Construir lista de semanas desde columnas Año/Semana (criterio Apps Script)
@@ -1463,6 +1464,12 @@ const MENU_GRUPOS={
   perro:{nombre:'Perros',icono:'🐶',color:'#E24B4A',consejo:'Poca venta y poco margen. Replantearlos o sacarlos de la carta.'}
 };
 let menuPeriodo='s13',menuSeccion='Todas';
+// Escandallos más los costes puestos a mano para platos sin escandallo (pestaña "Costes sin escandallo")
+function escandallosCompletos(){
+  const extra=rawCostesExtra.filter(e=>e['Nombre Agora']&&!isNaN(parseFloat(e['Coste racion'])))
+    .map(e=>({'Nombre Agora':e['Nombre Agora'],'Coste racion':e['Coste racion'],Categoria:/\(1 ?kg\)/i.test(e['Nombre Agora'])?'Carnes al peso':'Sin escandallo'}));
+  return rawEscandalloResumen.concat(extra);
+}
 const normMenu=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 
 function semanasMenu(){
@@ -1485,7 +1492,7 @@ function datosMenu(){
     v.uds+=parseFloat(r.Cantidad)||0; v.importe+=parseFloat(r['Ventas sin IVA'])||0;
   });
   const platos=[],conEscandallo=new Set();
-  rawEscandalloResumen.forEach(e=>{
+  escandallosCompletos().forEach(e=>{
     const k=normMenu(e['Nombre Agora']); if(!k) return;
     conEscandallo.add(k);
     const v=ventas[k]; if(!v||v.uds<=0) return;
@@ -1691,7 +1698,7 @@ function datosPL(desde,hasta){
   // Margen teórico: platos vendidos (LK Productos, por semanas) × coste de su escandallo.
   // Las semanas que caen en parte dentro del periodo cuentan en proporción a sus días.
   const costeEsc={};
-  rawEscandalloResumen.forEach(e=>{const k=normMenu(e['Nombre Agora']);const c=parseFloat(e['Coste racion']);if(k&&!isNaN(c))costeEsc[k]=c;});
+  escandallosCompletos().forEach(e=>{const k=normMenu(e['Nombre Agora']);const c=parseFloat(e['Coste racion']);if(k&&!isNaN(c))costeEsc[k]=c;});
   r.vCubiertas=0;r.costeTeorico=0;
   const semCache={};
   rawProductos.forEach(x=>{
