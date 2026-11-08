@@ -1813,7 +1813,11 @@ function renderPL(){
   const corteAnt=plCal==='op'?masDias(ayer,-364):new Date(ayer.getFullYear()-1,ayer.getMonth(),ayer.getDate());
   const [d,h]=rangoVistaPL(plPeriodo,modo,enCurso?ayer:null),[da,ha]=rangoVistaPL(pa,modo,enCurso?corteAnt:null);
   const fc=x=>`${x.getDate()} ${MESES_CORTOS[x.getMonth()]} ${String(x.getFullYear()).slice(2)}`;
-  document.getElementById('pl-label').textContent=etiquetaPeriodo(plPeriodo)+(modo==='periodo'?'':` · ${modo==='acum'?'acumulado':(plCal==='op'?'52 sem.':'12 meses')}`);
+  // Título sin año (los años están en la cabecera de la tabla): "Octubre", "Acumulado a T4", "12 meses a Octubre"…
+  const fd=x=>`${x.getDate()} ${MESES_CORTOS[x.getMonth()]}`,[pi,pf]=rangoPeriodo(plPeriodo);
+  const nombre={semana:`S${plPeriodo.n}`,p4:`P${plPeriodo.n}`,mes:PL_MESES[plPeriodo.n-1],trimestre:`T${plPeriodo.n}`,semestre:`${plPeriodo.n}º semestre`,anio:'Año completo'}[plTipo];
+  const detalleSem=plCal==='op'&&modo==='periodo'?` (${fd(pi)}–${fd(pf)})`:'';
+  document.getElementById('pl-label').textContent=modo==='acum'?`Acumulado ${plTipo==='semestre'?'al':'a'} ${nombre}`:modo==='ltm'?`${plCal==='op'?'52 semanas':'12 meses'} ${plTipo==='semestre'?'al':'a'} ${nombre}`:nombre[0].toUpperCase()+nombre.slice(1)+detalleSem;
   document.getElementById('pl-rango').textContent=modo==='periodo'&&!enCurso?'':`${fc(d)} – ${fc(h)}`+(enCurso?' · en curso, hasta ayer':'');
   const A=datosPL(d,h),B=datosPL(da,ha);
   let html='';
