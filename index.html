@@ -131,6 +131,9 @@
   .pl-tabla tr.pl-sub td:first-child{padding-left:14px;color:var(--texto-muted);}
   .pl-tabla td.ant{color:var(--texto-muted);}
   .pl-tabla tr.pl-it td:first-child{font-style:italic;color:var(--texto-muted);}
+  .pl-tabla tr.pl-pct td{font-style:italic;font-size:10.5px;}
+  .pl-tabla tr.pl-pct td:first-child{color:var(--texto-muted);}
+  .pl-tabla tr.pl-tot td:first-child,.pl-tabla tr.pl-desp td:first-child{white-space:nowrap;}
   .pl-tabla tr.pl-linea td{border-top:1px solid var(--texto);}
   .pl-tabla tr.pl-desp{cursor:pointer;}
   .pl-tabla tr.pl-desp td:first-child::before{content:'▸';display:inline-block;width:12px;color:var(--texto-muted);}
@@ -1770,7 +1773,7 @@ function renderPL(){
   const attrs=o=>`class="${o.cls||''}${o.grupo?' pl-hijo'+(plAbiertos.has(o.grupo)?' on':''):''}${o.abre?' pl-desp'+(plAbiertos.has(o.abre)?' abierto':''):''}"${o.abre?` data-abre="${o.abre}"`:''}`;
   const L=(t,a,b,o={})=>`<tr ${attrs(o)}><td>${t}</td><td class="ant">${v0(b)}</td><td>${v0(a)}</td><td>${dPct(a,b)}</td><td>${o.sinEur?'':dEur(a,b)}</td></tr>`;
   const P=(t,a,b,ba,bb,o={})=>{const pp=ba&&bb?a/ba*100-b/bb*100:null;
-    return `<tr ${attrs(Object.assign({},o,{cls:'pl-it '+(o.cls||'')}))}><td>${t}</td><td class="ant">${p0(b,bb)}</td><td>${p0(a,ba)}</td><td>${pp===null?'':col(pp,(pp>=0?'+':'')+n0(pp)+' pp')}</td><td></td></tr>`;};
+    return `<tr ${attrs(Object.assign({},o,{cls:'pl-pct '+(o.cls||'')}))}><td>${t}</td><td class="ant">${p0(b,bb)}</td><td>${p0(a,ba)}</td><td>${pp===null?'':col(pp,(pp>=0?'+':'')+n0(pp)+' pp')}</td><td></td></tr>`;};
   const vacia='<tr><td colspan="5" style="border:0;padding:4px"></td></tr>';
   // Los gastos se muestran en negativo: así "más alto" siempre es mejor y las variaciones se leen igual en todas las filas
   const g=x=>-x, otrosT=x=>x.otros+x.banco+x.seguros;
