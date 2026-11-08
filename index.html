@@ -1758,14 +1758,17 @@ function renderPL(){
   if(sinPersonal.length) html+=`<div class="pl-aviso">Falta el coste de personal de ${sinPersonal.map(nombreMes).join(', ')}: el EBITDA sale más alto de lo real (las nóminas se leen solas del correo).</div>`;
   if(!A.diasVentas) html+=`<div class="pl-aviso">No hay ventas registradas en este periodo.</div>`;
   // Tabla compacta: año anterior · año actual · Δ% · Δ€. Ventas, Margen bruto y Otros se despliegan al tocarlos.
-  // Formato: importes #.##0 (los gastos en negativo) y porcentajes sin decimales.
+  // Formato: importes #.##0 con los negativos entre paréntesis (gastos) y porcentajes sin decimales;
+  // en las columnas de diferencias (Δ) los negativos llevan signo.
   const n0=x=>{const r=Math.round(x);return (r<0?'-':'')+String(Math.abs(r)).replace(/\B(?=(\d{3})+(?!\d))/g,'.');};
-  const p0=(a,b)=>b?n0(a/b*100)+'%':'–';
+  const par=s=>s[0]==='-'?'('+s.slice(1)+')':s;  // -1.234 → (1.234)
+  const v0=x=>par(n0(x));
+  const p0=(a,b)=>b?par(n0(a/b*100)+'%'):'–';
   const col=(x,txt)=>`<span class="${x>=0?'pl-pos':'pl-neg'}">${txt}</span>`;
   const dPct=(a,b)=>{if(!b) return '';const p=(a-b)/Math.abs(b)*100;return col(p,(p>=0?'+':'')+n0(p)+'%');};
   const dEur=(a,b)=>{if(!a&&!b) return '';const x=a-b;return col(x,(x>=0?'+':'')+n0(x));};
   const attrs=o=>`class="${o.cls||''}${o.grupo?' pl-hijo'+(plAbiertos.has(o.grupo)?' on':''):''}${o.abre?' pl-desp'+(plAbiertos.has(o.abre)?' abierto':''):''}"${o.abre?` data-abre="${o.abre}"`:''}`;
-  const L=(t,a,b,o={})=>`<tr ${attrs(o)}><td>${t}</td><td class="ant">${n0(b)}</td><td>${n0(a)}</td><td>${dPct(a,b)}</td><td>${o.sinEur?'':dEur(a,b)}</td></tr>`;
+  const L=(t,a,b,o={})=>`<tr ${attrs(o)}><td>${t}</td><td class="ant">${v0(b)}</td><td>${v0(a)}</td><td>${dPct(a,b)}</td><td>${o.sinEur?'':dEur(a,b)}</td></tr>`;
   const P=(t,a,b,ba,bb,o={})=>{const pp=ba&&bb?a/ba*100-b/bb*100:null;
     return `<tr ${attrs(Object.assign({},o,{cls:'pl-it '+(o.cls||'')}))}><td>${t}</td><td class="ant">${p0(b,bb)}</td><td>${p0(a,ba)}</td><td>${pp===null?'':col(pp,(pp>=0?'+':'')+n0(pp)+' pp')}</td><td></td></tr>`;};
   const vacia='<tr><td colspan="5" style="border:0;padding:4px"></td></tr>';
