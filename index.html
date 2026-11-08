@@ -1772,7 +1772,6 @@ function renderPL(){
        +L('Ticket medio',A.ticket,B.ticket,{cls:'pl-it',fmt:x=>x.toFixed(1).replace('.',',')+' €'})+vacia;
   html+=L('<b>Ventas</b>',A.ventas,B.ventas,{cls:'pl-tot',abre:'ventas'})
        +L('Comida',A.vComida,B.vComida,{grupo:'ventas'})+L('Bebida',A.vBebida,B.vBebida,{grupo:'ventas'})
-       +L('Var. existencias',0,0,{fmt:()=>'–',sinDelta:true})
        +L('Compras',A.coste,B.coste,{coste:true});
   html+=L('<b>Margen bruto</b>',A.margen,B.margen,{cls:'pl-tot pl-linea',abre:'mb'})+P('% sobre ventas',A.margen,B.margen,A.ventas,B.ventas)
        +L('MB comida',A.mComida,B.mComida,{grupo:'mb'})+P('% sobre ventas comida',A.mComida,B.mComida,A.vComida,B.vComida,{grupo:'mb'})
