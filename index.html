@@ -127,6 +127,9 @@
   .pl-tipos{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;}
   .pl-tipo{font-size:12px;font-weight:600;padding:6px 10px;border-radius:14px;border:0.5px solid var(--gris-borde);background:var(--gris-card);color:var(--texto-muted);cursor:pointer;}
   .pl-tipo.on{background:var(--azul-claro);color:white;border-color:transparent;}
+  .pl-seg{display:flex;margin:0 auto 8px;width:max-content;max-width:100%;background:var(--gris-card);border:0.5px solid var(--gris-borde);border-radius:16px;padding:2px;}
+  .pl-seg button{font-size:12px;font-weight:600;padding:6px 12px;border:none;border-radius:14px;background:none;color:var(--texto-muted);cursor:pointer;}
+  .pl-seg button.on{background:var(--azul);color:white;}
   .pl-tabla{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;}
   .pl-tabla th{font-size:10px;font-weight:600;color:var(--texto-muted);text-transform:uppercase;letter-spacing:0.3px;padding:4px;text-align:right;}
   .pl-tabla th:first-child{text-align:left;}
@@ -264,6 +267,7 @@
       <span class="periodo-label" id="pl-label">...</span>
       <button class="periodo-btn" id="pl-next">›</button>
     </div>
+    <div class="pc-meta" id="pl-rango" style="text-align:center;margin:-4px 0 8px"></div>
     <div id="pl-contenido"></div>
   </div>
 
@@ -1625,10 +1629,18 @@ document.getElementById('menu-contenido').addEventListener('click',e=>{
 // Ventas y comensales de LK Diario; coste de comida, bebida y otros servicios de las facturas (Lista, por
 // fecha de factura, según la categoría del Maestro; el alquiler es la línea 621); personal de "Costes fijos"
 // (coste del mes repartido por días). Cada periodo se compara con el mismo periodo del año anterior.
-const PL_TIPOS={semana:'Semana',p4:'4 semanas',mes:'Mes',trimestre:'Trimestre',anio:'Año',ltm:'Últimos 12 meses'};
+// Vista del P&L en tres decisiones: calendario (operativo = semanas lun–dom, contable = meses naturales),
+// tamaño del periodo y modo (solo el periodo, acumulado desde el 1 de enero, o los 12 meses / 52 semanas
+// que terminan en el periodo elegido). Las flechas mueven el periodo; se compara con el mismo del año anterior.
+const PL_CALENDARIOS={op:'Operativo',cont:'Contable'};
+const PL_TAMANOS={op:{semana:'Semana',p4:'4 semanas'},cont:{mes:'Mes',trimestre:'Trimestre',semestre:'Semestre',anio:'Año'}};
+const PL_MODOS={periodo:'Periodo',acum:'Acumulado',ltm:'Últ. 12 meses'};
 const PL_MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MESES_CORTOS=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-let plTipo='mes',plPeriodo=null;
+let plCal='op',plTipo='semana',plModo='periodo',plPeriodo=null;
+try{const g=JSON.parse(localStorage.getItem('granpic-pl-vista')||'null');
+  if(g&&PL_TAMANOS[g.cal]&&PL_TAMANOS[g.cal][g.tipo]&&PL_MODOS[g.modo]){plCal=g.cal;plTipo=g.tipo;plModo=g.modo;}}catch(e){}
+const guardarVistaPL=()=>{try{localStorage.setItem('granpic-pl-vista',JSON.stringify({cal:plCal,tipo:plTipo,modo:plModo}));}catch(e){}};
 const plAbiertos=new Set();  // desplegables abiertos del P&L
 const isoDia=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const masDias=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
@@ -1655,6 +1667,7 @@ function periodoDe(tipo,d){
   if(tipo==='p4') return {tipo,anio:a,n:Math.min(Math.ceil(semanaDe(d)/4),Math.ceil(semanasDelAnio(a)/4))};
   if(tipo==='mes'||tipo==='ltm') return {tipo,anio:a,n:d.getMonth()+1};  // ltm: los 12 meses que acaban en ese mes
   if(tipo==='trimestre') return {tipo,anio:a,n:Math.floor(d.getMonth()/3)+1};
+  if(tipo==='semestre') return {tipo,anio:a,n:d.getMonth()<6?1:2};
   return {tipo,anio:a,n:1};
 }
 function rangoPeriodo(p){
@@ -1667,12 +1680,13 @@ function rangoPeriodo(p){
   if(p.tipo==='mes') return [new Date(a,p.n-1,1),new Date(a,p.n,0)];
   if(p.tipo==='ltm') return [new Date(a,p.n-12,1),new Date(a,p.n,0)];
   if(p.tipo==='trimestre') return [new Date(a,(p.n-1)*3,1),new Date(a,p.n*3,0)];
+  if(p.tipo==='semestre') return [new Date(a,(p.n-1)*6,1),new Date(a,p.n*6,0)];
   return [new Date(a,0,1),new Date(a,11,31)];
 }
 function nPeriodos(tipo,anio){
   if(tipo==='semana') return semanasDelAnio(anio);
   if(tipo==='p4') return Math.ceil(semanasDelAnio(anio)/4);
-  return {mes:12,ltm:12,trimestre:4,anio:1}[tipo];
+  return {mes:12,ltm:12,trimestre:4,semestre:2,anio:1}[tipo];
 }
 function moverPeriodo(p,paso){
   let {anio,n}=p; n+=paso;
@@ -1685,6 +1699,7 @@ function etiquetaPeriodo(p){
   if(p.tipo==='p4') return `P${p.n} · ${p.anio} (${f(d)}–${f(h)})`;
   if(p.tipo==='mes') return `${PL_MESES[p.n-1]} ${p.anio}`;
   if(p.tipo==='trimestre') return `T${p.n} · ${p.anio}`;
+  if(p.tipo==='semestre') return `Semestre ${p.n} · ${p.anio}`;
   if(p.tipo==='ltm') return `${MESES_CORTOS[d.getMonth()]} ${d.getFullYear()} – ${MESES_CORTOS[h.getMonth()]} ${h.getFullYear()}`;
   return `Año ${p.anio}`;
 }
@@ -1775,13 +1790,31 @@ function datosPL(desde,hasta){
 
 const fmtPct=(a,b)=>b?(a/b*100).toFixed(1).replace('.',',')+' %':'–';
 
+/** Fechas que abarca la vista: el periodo, el acumulado desde el 1 de enero o los 12 meses / 52 semanas hasta su final. */
+function rangoVistaPL(p,modo,corte){
+  let [ini,fin]=rangoPeriodo(p);
+  if(corte&&fin>corte) fin=corte;  // periodo en curso: solo hasta la fecha de corte
+  if(modo==='acum') return [new Date(p.anio,0,1),fin];
+  if(modo==='ltm') return [p.tipo==='semana'||p.tipo==='p4'?masDias(fin,-363):new Date(fin.getFullYear()-1,fin.getMonth(),fin.getDate()+1),fin];
+  return [ini,fin];
+}
 function renderPL(){
-  document.getElementById('pl-tipos').innerHTML=Object.entries(PL_TIPOS).map(([k,v])=>`<button class="pl-tipo${k===plTipo?' on':''}" data-tipo="${k}">${v}</button>`).join('');
+  const seg=(attr,opts,act)=>`<div class="pl-seg">${Object.entries(opts).map(([k,t])=>`<button data-${attr}="${k}" class="${k===act?'on':''}">${t}</button>`).join('')}</div>`;
+  document.getElementById('pl-tipos').innerHTML=seg('cal',PL_CALENDARIOS,plCal)
+    +`<div class="pl-tipos">${Object.entries(PL_TAMANOS[plCal]).map(([k,t])=>`<button class="pl-tipo${k===plTipo?' on':''}" data-tipo="${k}">${t}</button>`).join('')}</div>`
+    +(plTipo==='anio'?'':seg('modo',Object.assign({},PL_MODOS,{ltm:plCal==='op'?'Últ. 52 semanas':'Últ. 12 meses'}),plModo));
   if(!plPeriodo) plPeriodo=periodoDe(plTipo,masDias(new Date(),-1));
-  const [d,h]=rangoPeriodo(plPeriodo);
   const pa={tipo:plPeriodo.tipo,anio:plPeriodo.anio-1,n:Math.min(plPeriodo.n,nPeriodos(plPeriodo.tipo,plPeriodo.anio-1))};
-  const [da,ha]=rangoPeriodo(pa);
-  document.getElementById('pl-label').textContent=etiquetaPeriodo(plPeriodo);
+  const modo=plTipo==='anio'?'periodo':plModo;
+  // Si el periodo está en curso se corta en ayer, y el del año anterior en la misma fecha
+  // (en el calendario operativo, 364 días antes: mismo día de la semana).
+  const ayer=masDias(new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()),-1);
+  const [,finSel]=rangoPeriodo(plPeriodo), enCurso=finSel>ayer;
+  const corteAnt=plCal==='op'?masDias(ayer,-364):new Date(ayer.getFullYear()-1,ayer.getMonth(),ayer.getDate());
+  const [d,h]=rangoVistaPL(plPeriodo,modo,enCurso?ayer:null),[da,ha]=rangoVistaPL(pa,modo,enCurso?corteAnt:null);
+  const fc=x=>`${x.getDate()} ${MESES_CORTOS[x.getMonth()]} ${String(x.getFullYear()).slice(2)}`;
+  document.getElementById('pl-label').textContent=etiquetaPeriodo(plPeriodo)+(modo==='periodo'?'':` · ${modo==='acum'?'acumulado':(plCal==='op'?'52 sem.':'12 meses')}`);
+  document.getElementById('pl-rango').textContent=modo==='periodo'&&!enCurso?'':`${fc(d)} – ${fc(h)}`+(enCurso?' · en curso, hasta ayer':'');
   const A=datosPL(d,h),B=datosPL(da,ha);
   let html='';
   const sinPersonal=[...A.mesesSinPersonal].sort();
@@ -1804,7 +1837,7 @@ function renderPL(){
   const vacia='<tr><td colspan="5" style="border:0;padding:4px"></td></tr>';
   // Los gastos se muestran en negativo: así "más alto" siempre es mejor y las variaciones se leen igual en todas las filas
   const g=x=>-x, otrosT=x=>x.otros+x.banco+x.seguros;
-  html+=`<div class="section"><table class="pl-tabla"><thead><tr><th></th><th>${plPeriodo.tipo==='ltm'?'12 previos':pa.anio}</th><th>${plPeriodo.tipo==='ltm'?'12 meses':plPeriodo.anio}</th><th>Δ%</th><th>Δ€</th></tr></thead><tbody>`;
+  html+=`<div class="section"><table class="pl-tabla"><thead><tr><th></th><th>${pa.anio}</th><th>${plPeriodo.anio}</th><th>Δ%</th><th>Δ€</th></tr></thead><tbody>`;
   html+=L('Nº comensales',A.comensales,B.comensales,{cls:'pl-it',sinEur:true})
        +L('Ticket medio (€)',A.ticket,B.ticket,{cls:'pl-it'})+vacia;
   html+=L('<b>Ventas</b>',A.ventas,B.ventas,{cls:'pl-tot',abre:'ventas'})
@@ -1828,10 +1861,14 @@ function renderPL(){
 }
 
 document.getElementById('pl-tipos').addEventListener('click',e=>{
-  const b=e.target.closest('[data-tipo]'); if(!b) return;
-  plTipo=b.dataset.tipo;
-  const ref=plPeriodo?rangoPeriodo(plPeriodo)[0]:masDias(new Date(),-1);
-  plPeriodo=periodoDe(plTipo,ref);
+  const b=e.target.closest('[data-tipo],[data-cal],[data-modo]'); if(!b) return;
+  const ref=plPeriodo?rangoPeriodo(plPeriodo)[1]:masDias(new Date(),-1);  // se mantiene la fecha al cambiar de vista
+  if(b.dataset.cal){plCal=b.dataset.cal;if(!PL_TAMANOS[plCal][plTipo])plTipo=Object.keys(PL_TAMANOS[plCal])[0];}
+  if(b.dataset.tipo) plTipo=b.dataset.tipo;
+  if(b.dataset.modo) plModo=b.dataset.modo;
+  const hoy=masDias(new Date(),-1);
+  plPeriodo=periodoDe(plTipo,ref>hoy?hoy:ref);
+  guardarVistaPL();
   renderPL();
 });
 document.getElementById('pl-contenido').addEventListener('click',e=>{
