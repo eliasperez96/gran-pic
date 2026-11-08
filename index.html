@@ -15,9 +15,15 @@
   .header-title{font-size:20px;font-weight:600;color:white;letter-spacing:-0.3px;}
   .header-sub{font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px;}
   .header-badge{background:rgba(255,255,255,0.15);border-radius:20px;padding:6px 14px;font-size:12px;color:white;font-weight:500;}
-  .tabs-bar{background:var(--azul);padding:0 20px 16px;display:flex;justify-content:center;}
-  .main-tabs{display:flex;gap:3px;background:rgba(255,255,255,0.1);border-radius:20px;padding:3px;flex-wrap:wrap;justify-content:center;}
-  .main-tab{font-size:10px;font-weight:500;color:rgba(255,255,255,0.6);padding:5px 10px;border-radius:16px;border:none;background:none;cursor:pointer;white-space:nowrap;}
+  /* Menú lateral (botón ☰ del encabezado) */
+  .menu-btn{width:40px;height:40px;margin-right:12px;border:none;border-radius:12px;background:rgba(255,255,255,0.15);color:white;font-size:20px;line-height:1;cursor:pointer;flex-shrink:0;}
+  .header-izq{display:flex;align-items:center;}
+  .tabs-bar{position:fixed;top:0;left:0;bottom:0;width:240px;max-width:80vw;background:var(--azul);z-index:60;padding:56px 12px 24px;transform:translateX(-100%);transition:transform .22s ease;overflow-y:auto;box-shadow:2px 0 16px rgba(0,0,0,0.2);}
+  .tabs-bar.abierto{transform:none;}
+  .menu-velo{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:59;display:none;}
+  .menu-velo.on{display:block;}
+  .main-tabs{display:flex;flex-direction:column;gap:2px;}
+  .main-tab{font-size:15px;font-weight:500;color:rgba(255,255,255,0.75);padding:12px 14px;border-radius:12px;border:none;background:none;cursor:pointer;text-align:left;}
   .main-tab.on{background:white;color:var(--azul);}
   .content{padding:16px;}
   .tab-panel{display:none;}
@@ -183,14 +189,18 @@
 </div>
 
 <div class="header">
-  <div>
-    <div class="header-title">Gran Pic</div>
-    <div class="header-sub">Dashboard operativo</div>
+  <div class="header-izq">
+    <button class="menu-btn" id="menu-btn" aria-label="Abrir menú">☰</button>
+    <div>
+      <div class="header-title">Gran Pic</div>
+      <div class="header-sub" id="seccion-actual">Op. Diaria</div>
+    </div>
   </div>
   <div class="header-badge" id="last-update">Cargando...</div>
 </div>
 
-<div class="tabs-bar">
+<div class="menu-velo" id="menu-velo"></div>
+<div class="tabs-bar" id="tabs-bar">
   <div class="main-tabs">
     <button class="main-tab on" data-tab="op-diaria">Op. Diaria</button>
     <button class="main-tab" data-tab="op-semanal">Op. Semanal</button>
@@ -1304,6 +1314,13 @@ document.getElementById('tv-next').addEventListener('click',()=>{if(tvIdx<semana
 document.getElementById('fac-prev').addEventListener('click',()=>{facMes--;if(facMes<0){facMes=11;facAño--;}renderFacturas();});
 document.getElementById('fac-next').addEventListener('click',()=>{facMes++;if(facMes>11){facMes=0;facAño++;}renderFacturas();});
 
+// Menú lateral
+function abrirMenu(si){
+  document.getElementById('tabs-bar').classList.toggle('abierto',si);
+  document.getElementById('menu-velo').classList.toggle('on',si);
+}
+document.getElementById('menu-btn').addEventListener('click',()=>abrirMenu(true));
+document.getElementById('menu-velo').addEventListener('click',()=>abrirMenu(false));
 document.querySelectorAll('.main-tab').forEach(b=>{
   b.addEventListener('click',()=>{
     document.querySelectorAll('.main-tab').forEach(x=>x.classList.remove('on'));
@@ -1311,6 +1328,9 @@ document.querySelectorAll('.main-tab').forEach(b=>{
     document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('on'));
     document.getElementById('panel-'+b.dataset.tab).classList.add('on');
     if(b.dataset.tab==='visor') abrirVisor();
+    document.getElementById('seccion-actual').textContent=b.textContent;
+    abrirMenu(false);
+    window.scrollTo(0,0);
     if(b.dataset.tab==='visor'||b.dataset.tab==='facturas') cargarPdfJs().catch(()=>{});
   });
 });
