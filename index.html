@@ -1839,42 +1839,45 @@ function renderPL(){
   const par=s=>s[0]==='-'?'('+s.slice(1)+')':s;  // -1.234 → (1.234)
   const v0=x=>par(n0(x));
   const p0=(a,b)=>b?par(n0(a/b*100)+'%'):'–';
-  const col=(x,txt)=>`<span class="${x>=0?'pl-pos':'pl-neg'}">${txt}</span>`;
-  const dPct=(a,b)=>{if(!b) return '';const p=(a-b)/Math.abs(b)*100;return col(p,(p>=0?'+':'')+n0(p)+'%');};
-  const dEur=(a,b)=>{if(!a&&!b) return '';const x=a-b;return col(x,(x>=0?'+':'')+n0(x));};
+  // Diferencias sin color y con el signo de lo que hace la línea: si un gasto sube, la variación es positiva.
+  // Los gastos llegan en negativo (para mostrarlos entre paréntesis), así que se comparan en positivo.
+  const dPct=(a,b,gasto)=>{if(gasto){a=-a;b=-b;}if(!b) return '';const p=(a-b)/Math.abs(b)*100;return (p>=0?'+':'')+n0(p)+'%';};
+  const dEur=(a,b,gasto)=>{if(gasto){a=-a;b=-b;}if(!a&&!b) return '';const x=a-b;return (x>=0?'+':'')+n0(x);};
   // o.padre: fila nieta (proveedor), visible solo si están abiertos su grupo y el grupo de su madre
   const attrs=o=>`class="${o.cls||''}${o.grupo?' pl-hijo'+(o.padre?' pl-nieto':'')+(plAbiertos.has(o.grupo)&&(!o.padre||plAbiertos.has(o.padre))?' on':''):''}${o.abre?' pl-desp'+(plAbiertos.has(o.abre)?' abierto':''):''}"${o.abre?` data-abre="${o.abre}"`:''}`;
-  const L=(t,a,b,o={})=>`<tr ${attrs(o)}><td>${t}</td><td class="ant">${v0(b)}</td><td>${v0(a)}</td><td>${dPct(a,b)}</td><td>${o.sinEur?'':dEur(a,b)}</td></tr>`;
-  const P=(t,a,b,ba,bb,o={})=>{const pp=ba&&bb?a/ba*100-b/bb*100:null;
-    return `<tr ${attrs(Object.assign({},o,{cls:'pl-pct '+(o.cls||'')}))}><td>${t}</td><td class="ant">${p0(b,bb)}</td><td>${p0(a,ba)}</td><td>${pp===null?'':col(pp,(pp>=0?'+':'')+n0(pp)+' pp')}</td><td></td></tr>`;};
+  const L=(t,a,b,o={})=>`<tr ${attrs(o)}><td>${t}</td><td class="ant">${v0(b)}</td><td>${v0(a)}</td><td>${dPct(a,b,o.gasto)}</td><td>${o.sinEur?'':dEur(a,b,o.gasto)}</td></tr>`;
+  const P=(t,a,b,ba,bb,o={})=>{let pp=ba&&bb?a/ba*100-b/bb*100:null;if(pp!==null&&o.gasto)pp=-pp;
+    return `<tr ${attrs(Object.assign({},o,{cls:'pl-pct '+(o.cls||'')}))}><td>${t}</td><td class="ant">${p0(b,bb)}</td><td>${p0(a,ba)}</td><td>${pp===null?'':(pp>=0?'+':'')+n0(pp)+' pp'}</td><td></td></tr>`;};
   const vacia='<tr><td colspan="5" style="border:0;padding:4px"></td></tr>';
-  // Los gastos se muestran en negativo: así "más alto" siempre es mejor y las variaciones se leen igual en todas las filas
-  const g=x=>-x, otrosT=x=>x.otros+x.banco+x.seguros;
+  // Los gastos se muestran en negativo (entre paréntesis); sus filas llevan gasto:true para que las diferencias
+  // se calculen sobre el importe del gasto
+  const g=x=>-x, otrosT=x=>x.otros+x.banco+x.seguros, G={gasto:true};
+  const Gx=o=>Object.assign({gasto:true},o);
   // Detalle de compras por proveedor (los dos años), de mayor a menor gasto
   const proveedores=(pa,pb,grupo)=>Object.keys(Object.assign({},pa,pb))
     .map(k=>({k,nombre:(pa[k]||pb[k]).nombre,a:pa[k]?pa[k].importe:0,b:pb[k]?pb[k].importe:0}))
     .filter(p=>Math.round(p.a)||Math.round(p.b))
     .sort((x,y)=>Math.max(y.a,y.b)-Math.max(x.a,x.b))
-    .map(p=>L(p.nombre,g(p.a),g(p.b),{grupo,padre:'compras'})).join('');
+    .map(p=>L(p.nombre,g(p.a),g(p.b),Gx({grupo,padre:'compras'}))).join('');
   html+=`<div class="section"><table class="pl-tabla"><thead><tr><th></th><th>${pa.anio}</th><th>${plPeriodo.anio}</th><th>Δ%</th><th>Δ€</th></tr></thead><tbody>`;
   html+=L('Nº comensales',A.comensales,B.comensales,{cls:'pl-it',sinEur:true})
        +L('Ticket medio (€)',A.ticket,B.ticket,{cls:'pl-it'})+vacia;
   html+=L('<b>Ventas</b>',A.ventas,B.ventas,{cls:'pl-tot',abre:'ventas'})
        +L('Comida',A.vComida,B.vComida,{grupo:'ventas'})+L('Bebida',A.vBebida,B.vBebida,{grupo:'ventas'})
-       +L('Compras',g(A.coste),g(B.coste),{abre:'compras'})
-       +L('Comida',g(A.cComida),g(B.cComida),{grupo:'compras',abre:'cmpComida'})+proveedores(A.provComida,B.provComida,'cmpComida')
-       +L('Bebida',g(A.cBebida),g(B.cBebida),{grupo:'compras',abre:'cmpBebida'})+proveedores(A.provBebida,B.provBebida,'cmpBebida');
+       +L('Compras',g(A.coste),g(B.coste),Gx({abre:'compras'}))
+       +L('Comida',g(A.cComida),g(B.cComida),Gx({grupo:'compras',abre:'cmpComida'}))+proveedores(A.provComida,B.provComida,'cmpComida')
+       +L('Bebida',g(A.cBebida),g(B.cBebida),Gx({grupo:'compras',abre:'cmpBebida'}))+proveedores(A.provBebida,B.provBebida,'cmpBebida');
   html+=L('<b>Margen bruto</b>',A.margen,B.margen,{cls:'pl-tot pl-linea',abre:'mb'})+P('% sobre ventas',A.margen,B.margen,A.ventas,B.ventas)
        +L('MB comida',A.mComida,B.mComida,{grupo:'mb'})+P('% sobre ventas comida',A.mComida,B.mComida,A.vComida,B.vComida,{grupo:'mb'})
        +L('MB bebida',A.mBebida,B.mBebida,{grupo:'mb'})+P('% sobre ventas bebida',A.mBebida,B.mBebida,A.vBebida,B.vBebida,{grupo:'mb'})
        +P('MB teórico comida (escandallos)',A.mTeorico,B.mTeorico,A.vCubiertas,B.vCubiertas,{grupo:'mb'})
        +P('Ventas comida con escandallo',A.vCubiertas,B.vCubiertas,A.vComida,B.vComida,{grupo:'mb'})
-       +L('Dif. teórico vs real (mermas, stock)',g(A.fugaComida),g(B.fugaComida),{grupo:'mb'});
-  html+=L('Personal',g(A.personal),g(B.personal))+P('% sobre ventas',g(A.personal),g(B.personal),A.ventas,B.ventas)
-       +L('Alquiler',g(A.alquiler),g(B.alquiler))+P('% sobre ventas',g(A.alquiler),g(B.alquiler),A.ventas,B.ventas);
-  html+=L('Otros',g(otrosT(A)),g(otrosT(B)),{abre:'otros'})
-       +L('Servicios (facturas)',g(A.otros),g(B.otros),{grupo:'otros'})+L('Banco y datáfono (est.)',g(A.banco),g(B.banco),{grupo:'otros'})+L('Seguros (est.)',g(A.seguros),g(B.seguros),{grupo:'otros'})
-       +P('% sobre ventas',g(otrosT(A)),g(otrosT(B)),A.ventas,B.ventas);
+       +L('Dif. teórico vs real (mermas, stock)',g(A.fugaComida),g(B.fugaComida),Gx({grupo:'mb'}));
+  html+=L('Personal',g(A.personal),g(B.personal),G)+P('% sobre ventas',g(A.personal),g(B.personal),A.ventas,B.ventas,G)
+       +L('Alquiler',g(A.alquiler),g(B.alquiler),G)+P('% sobre ventas',g(A.alquiler),g(B.alquiler),A.ventas,B.ventas,G);
+  html+=L('Otros',g(otrosT(A)),g(otrosT(B)),Gx({abre:'otros'}))
+       +L('Servicios (facturas)',g(A.otros),g(B.otros),Gx({grupo:'otros'}))+L('Banco y datáfono (est.)',g(A.banco),g(B.banco),Gx({grupo:'otros'}))+L('Seguros (est.)',g(A.seguros),g(B.seguros),Gx({grupo:'otros'}))
+       +P('% sobre ventas',g(otrosT(A)),g(otrosT(B)),A.ventas,B.ventas,G);
   html+=L('<b>EBITDA</b>',A.ebitda,B.ebitda,{cls:'pl-tot pl-linea'})+P('% sobre ventas',A.ebitda,B.ebitda,A.ventas,B.ventas);
   html+=`</tbody></table></div>`;
 
