@@ -157,6 +157,8 @@
   .pl-tabla tr.pl-hijo{display:none;background:#fbe6dc;}
   .pl-tabla tr.pl-hijo.on{display:table-row;}
   .pl-tabla tr.pl-hijo td:first-child{padding-left:16px;}
+  .pl-tabla tr.pl-nieto{background:#fdf2ec;font-size:11px;}
+  .pl-tabla tr.pl-nieto td:first-child{padding-left:30px;white-space:normal;}
   .pl-tabla th,.pl-tabla td{padding-left:3px;padding-right:3px;}
   .pl-pos{color:var(--verde);} .pl-neg{color:var(--rojo);}
   .pl-aviso{font-size:11px;color:#8a5a00;background:#fef6e6;border-radius:10px;padding:8px 10px;margin-bottom:10px;}
@@ -1732,7 +1734,8 @@ function mapaPersonal(){
 
 function datosPL(desde,hasta){
   const d0=isoDia(desde),d1=isoDia(hasta);
-  const r={comensales:0,comComida:0,comCena:0,ventas:0,vComida:0,vBebida:0,cComida:0,cBebida:0,alquiler:0,otros:0,personal:0,bancoVar:0,diasVentas:0,mesesSinPersonal:new Set()};
+  const r={comensales:0,comComida:0,comCena:0,ventas:0,vComida:0,vBebida:0,cComida:0,cBebida:0,alquiler:0,otros:0,personal:0,bancoVar:0,diasVentas:0,mesesSinPersonal:new Set(),
+    provComida:{},provBebida:{}};  // compras por proveedor: {clave: {nombre, importe}}
   const dias=new Set(),n=v=>parseFloat(v)||0;
   rawDiario.forEach(x=>{
     const f=(x.Fecha||'').toString().slice(0,10); if(f<d0||f>d1) return;
@@ -1747,7 +1750,12 @@ function datosPL(desde,hasta){
     const f=(x.Fecha||'').toString().slice(0,10); if(f<d0||f>d1) return;
     const base=n(x['Base Imponible (€)']||x['Base Imponible']),total=n(x['Total (€)']||x['Total']);
     const importe=base||total;  // si la factura no tiene base, al menos el total
-    const c=cats[(x.Proveedor||'').toString().trim().toLowerCase()]||'otros';
+    const nombre=(x.Proveedor||'').toString().trim(),clave=nombre.toLowerCase();
+    const c=cats[clave]||'otros';
+    if(c==='comida'||c==='bebida'){
+      const p=c==='comida'?r.provComida:r.provBebida;
+      (p[clave]=p[clave]||{nombre,importe:0}).importe+=importe;
+    }
     if(c==='comida') r.cComida+=importe; else if(c==='bebida') r.cBebida+=importe; else if(c==='alquiler') r.alquiler+=importe; else r.otros+=importe;
   });
   // Margen teórico: platos vendidos (LK Productos, por semanas) × coste de su escandallo.
@@ -1834,19 +1842,28 @@ function renderPL(){
   const col=(x,txt)=>`<span class="${x>=0?'pl-pos':'pl-neg'}">${txt}</span>`;
   const dPct=(a,b)=>{if(!b) return '';const p=(a-b)/Math.abs(b)*100;return col(p,(p>=0?'+':'')+n0(p)+'%');};
   const dEur=(a,b)=>{if(!a&&!b) return '';const x=a-b;return col(x,(x>=0?'+':'')+n0(x));};
-  const attrs=o=>`class="${o.cls||''}${o.grupo?' pl-hijo'+(plAbiertos.has(o.grupo)?' on':''):''}${o.abre?' pl-desp'+(plAbiertos.has(o.abre)?' abierto':''):''}"${o.abre?` data-abre="${o.abre}"`:''}`;
+  // o.padre: fila nieta (proveedor), visible solo si están abiertos su grupo y el grupo de su madre
+  const attrs=o=>`class="${o.cls||''}${o.grupo?' pl-hijo'+(o.padre?' pl-nieto':'')+(plAbiertos.has(o.grupo)&&(!o.padre||plAbiertos.has(o.padre))?' on':''):''}${o.abre?' pl-desp'+(plAbiertos.has(o.abre)?' abierto':''):''}"${o.abre?` data-abre="${o.abre}"`:''}`;
   const L=(t,a,b,o={})=>`<tr ${attrs(o)}><td>${t}</td><td class="ant">${v0(b)}</td><td>${v0(a)}</td><td>${dPct(a,b)}</td><td>${o.sinEur?'':dEur(a,b)}</td></tr>`;
   const P=(t,a,b,ba,bb,o={})=>{const pp=ba&&bb?a/ba*100-b/bb*100:null;
     return `<tr ${attrs(Object.assign({},o,{cls:'pl-pct '+(o.cls||'')}))}><td>${t}</td><td class="ant">${p0(b,bb)}</td><td>${p0(a,ba)}</td><td>${pp===null?'':col(pp,(pp>=0?'+':'')+n0(pp)+' pp')}</td><td></td></tr>`;};
   const vacia='<tr><td colspan="5" style="border:0;padding:4px"></td></tr>';
   // Los gastos se muestran en negativo: así "más alto" siempre es mejor y las variaciones se leen igual en todas las filas
   const g=x=>-x, otrosT=x=>x.otros+x.banco+x.seguros;
+  // Detalle de compras por proveedor (los dos años), de mayor a menor gasto
+  const proveedores=(pa,pb,grupo)=>Object.keys(Object.assign({},pa,pb))
+    .map(k=>({k,nombre:(pa[k]||pb[k]).nombre,a:pa[k]?pa[k].importe:0,b:pb[k]?pb[k].importe:0}))
+    .filter(p=>Math.round(p.a)||Math.round(p.b))
+    .sort((x,y)=>Math.max(y.a,y.b)-Math.max(x.a,x.b))
+    .map(p=>L(p.nombre,g(p.a),g(p.b),{grupo,padre:'compras'})).join('');
   html+=`<div class="section"><table class="pl-tabla"><thead><tr><th></th><th>${pa.anio}</th><th>${plPeriodo.anio}</th><th>Δ%</th><th>Δ€</th></tr></thead><tbody>`;
   html+=L('Nº comensales',A.comensales,B.comensales,{cls:'pl-it',sinEur:true})
        +L('Ticket medio (€)',A.ticket,B.ticket,{cls:'pl-it'})+vacia;
   html+=L('<b>Ventas</b>',A.ventas,B.ventas,{cls:'pl-tot',abre:'ventas'})
        +L('Comida',A.vComida,B.vComida,{grupo:'ventas'})+L('Bebida',A.vBebida,B.vBebida,{grupo:'ventas'})
-       +L('Compras',g(A.coste),g(B.coste));
+       +L('Compras',g(A.coste),g(B.coste),{abre:'compras'})
+       +L('Comida',g(A.cComida),g(B.cComida),{grupo:'compras',abre:'cmpComida'})+proveedores(A.provComida,B.provComida,'cmpComida')
+       +L('Bebida',g(A.cBebida),g(B.cBebida),{grupo:'compras',abre:'cmpBebida'})+proveedores(A.provBebida,B.provBebida,'cmpBebida');
   html+=L('<b>Margen bruto</b>',A.margen,B.margen,{cls:'pl-tot pl-linea',abre:'mb'})+P('% sobre ventas',A.margen,B.margen,A.ventas,B.ventas)
        +L('MB comida',A.mComida,B.mComida,{grupo:'mb'})+P('% sobre ventas comida',A.mComida,B.mComida,A.vComida,B.vComida,{grupo:'mb'})
        +L('MB bebida',A.mBebida,B.mBebida,{grupo:'mb'})+P('% sobre ventas bebida',A.mBebida,B.mBebida,A.vBebida,B.vBebida,{grupo:'mb'})
