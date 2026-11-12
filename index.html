@@ -360,7 +360,7 @@ const DIAS=['L','M','X','J','V','S','D'];
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const OBJETIVO_MARGEN=70;
 
-let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[],rawEscandalloResumen=[],rawEscandalloDetalle=[],rawCostesFijos=[],rawCostesExtra=[];
+let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[],rawEscandalloResumen=[],rawEscandalloDetalle=[],rawCostesFijos=[],rawCostesExtra=[],rawBancoMensual=[];
 let semanas=[],opIdx=0,tvIdx=0;
 let facMes=new Date().getMonth(),facAño=new Date().getFullYear();
 let semFechasMap={};
@@ -1204,7 +1204,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 // Paquete de datos: una sola petición (?paquete=1) con las 7 pestañas, generado cada hora en Apps Script.
 // Se guarda en el móvil para enseñar al instante los datos de la última vez mientras llegan los nuevos.
 const CACHE_KEY='granpic-paquete-v1';
-const HOJAS_APP=['LK Diario','LK Productos','Lista','Maestro Proveedores','LK Semanal','Escandallo_Resumen_API','Escandallo_Detalle_API','Costes fijos','Costes sin escandallo'];
+const HOJAS_APP=['LK Diario','LK Productos','Lista','Maestro Proveedores','LK Semanal','Escandallo_Resumen_API','Escandallo_Detalle_API','Costes fijos','Costes sin escandallo','Banco mensual'];
 let pintado=false;
 
 function expandirTabla(t){
@@ -1277,6 +1277,7 @@ function pintarPaquete(p){
   rawEscandalloDetalle=expandirTabla(h['Escandallo_Detalle_API']);
   rawCostesFijos=expandirTabla(h['Costes fijos']);
   rawCostesExtra=expandirTabla(h['Costes sin escandallo']);
+  rawBancoMensual=expandirTabla(h['Banco mensual']);
   const semAntes=pintado?{op:semanas[opIdx],tv:semanas[tvIdx]}:null;
 
     // Construir lista de semanas desde columnas Año/Semana (criterio Apps Script)
@@ -1715,6 +1716,14 @@ const PL_ESTIMADOS={
   2026:{bancoFijoMes:283,bancoPctVentas:0.0024,segurosMes:240.59},
 };
 const estimadosDe=anio=>{const a=Object.keys(PL_ESTIMADOS).map(Number).sort((x,y)=>x-y);return PL_ESTIMADOS[a.filter(x=>x<=anio).pop()||a[0]];};
+// Pestaña "Banco mensual" (la genera banco.gs): comisiones bancarias y seguros de cada mes, reales del banco
+// desde sep. 2026 y estimados antes. Si un mes no está, se usa PL_ESTIMADOS.
+function mapaBancoMensual(){
+  const m={};
+  rawBancoMensual.forEach(x=>{const k=(x.Mes||'').toString().slice(0,7);const c=parseFloat(x['Comisiones bancarias']),s=parseFloat(x.Seguros);
+    if(/^\d{4}-\d{2}$/.test(k)&&!isNaN(c)&&!isNaN(s))m[k]={comisiones:c,seguros:s,fuente:x.Fuente};});
+  return m;
+}
 
 function mapaMaestroPL(){
   const m={};
@@ -1736,11 +1745,11 @@ function datosPL(desde,hasta){
   const d0=isoDia(desde),d1=isoDia(hasta);
   const r={comensales:0,comComida:0,comCena:0,ventas:0,vComida:0,vBebida:0,cComida:0,cBebida:0,alquiler:0,otros:0,personal:0,bancoVar:0,diasVentas:0,mesesSinPersonal:new Set(),
     provComida:{},provBebida:{}};  // compras por proveedor: {clave: {nombre, importe}}
-  const dias=new Set(),n=v=>parseFloat(v)||0;
+  const dias=new Set(),n=v=>parseFloat(v)||0,bancoMes=mapaBancoMensual();
   rawDiario.forEach(x=>{
     const f=(x.Fecha||'').toString().slice(0,10); if(f<d0||f>d1) return;
     const t=(x.Turno||'').toString().toLowerCase();
-    if(t==='total'){r.comensales+=n(x.Comensales);r.ventas+=n(x['Ventas sin IVA']);r.bancoVar+=n(x['Ventas sin IVA'])*estimadosDe(+f.slice(0,4)).bancoPctVentas;r.vComida+=n(x['Comida sin IVA']);r.vBebida+=n(x['Bebida sin IVA']);dias.add(f);}
+    if(t==='total'){r.comensales+=n(x.Comensales);r.ventas+=n(x['Ventas sin IVA']);if(!bancoMes[f.slice(0,7)])r.bancoVar+=n(x['Ventas sin IVA'])*estimadosDe(+f.slice(0,4)).bancoPctVentas;r.vComida+=n(x['Comida sin IVA']);r.vBebida+=n(x['Bebida sin IVA']);dias.add(f);}
     else if(t.includes('almuerzo')) r.comComida+=n(x.Comensales);
     else if(t.includes('cena')) r.comCena+=n(x.Comensales);
   });
@@ -1776,16 +1785,22 @@ function datosPL(desde,hasta){
   // Personal y gastos estimados sin factura: el importe del mes se reparte por días (solo hasta hoy)
   const personal=mapaPersonal(),hoy=new Date();
   r.banco=0;r.seguros=0;
+  const mesHoy=isoDia(hoy).slice(0,7);
   for(let d=new Date(desde);d<=hasta&&d<=hoy;d=masDias(d,1)){
     const diasMes=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
-    const est=estimadosDe(d.getFullYear());
-    r.banco+=est.bancoFijoMes/diasMes;
-    r.seguros+=est.segurosMes/diasMes;
     const m=isoDia(d).slice(0,7);
+    if(bancoMes[m]){
+      // Importe del mes (real del banco o estimado): el mes en curso se reparte entre los días que van
+      const div=m===mesHoy?hoy.getDate():diasMes;
+      r.banco+=bancoMes[m].comisiones/div; r.seguros+=bancoMes[m].seguros/div;
+    }else{
+      const est=estimadosDe(d.getFullYear());
+      r.banco+=est.bancoFijoMes/diasMes; r.seguros+=est.segurosMes/diasMes;
+    }
     if(personal[m]===undefined){r.mesesSinPersonal.add(m);continue;}
     r.personal+=personal[m]/diasMes;
   }
-  r.banco+=r.bancoVar;
+  r.banco+=r.bancoVar;  // solo meses que no están en "Banco mensual"
   r.coste=r.cComida+r.cBebida;
   r.margen=r.ventas-r.coste; r.mComida=r.vComida-r.cComida; r.mBebida=r.vBebida-r.cBebida;
   // Diferencia entre el margen de comida que dicen los escandallos y el real, llevada a euros de ventas de comida
@@ -1876,7 +1891,7 @@ function renderPL(){
   html+=L('Personal',g(A.personal),g(B.personal),G)+P('% sobre ventas',g(A.personal),g(B.personal),A.ventas,B.ventas,G)
        +L('Alquiler',g(A.alquiler),g(B.alquiler),G)+P('% sobre ventas',g(A.alquiler),g(B.alquiler),A.ventas,B.ventas,G);
   html+=L('Otros',g(otrosT(A)),g(otrosT(B)),Gx({abre:'otros'}))
-       +L('Servicios (facturas)',g(A.otros),g(B.otros),Gx({grupo:'otros'}))+L('Banco y datáfono (est.)',g(A.banco),g(B.banco),Gx({grupo:'otros'}))+L('Seguros (est.)',g(A.seguros),g(B.seguros),Gx({grupo:'otros'}))
+       +L('Servicios (facturas)',g(A.otros),g(B.otros),Gx({grupo:'otros'}))+L('Comisiones bancarias',g(A.banco),g(B.banco),Gx({grupo:'otros'}))+L('Seguros',g(A.seguros),g(B.seguros),Gx({grupo:'otros'}))
        +P('% sobre ventas',g(otrosT(A)),g(otrosT(B)),A.ventas,B.ventas,G);
   html+=L('<b>EBITDA</b>',A.ebitda,B.ebitda,{cls:'pl-tot pl-linea'})+P('% sobre ventas',A.ebitda,B.ebitda,A.ventas,B.ventas);
   html+=`</tbody></table></div>`;
