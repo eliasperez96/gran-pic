@@ -162,6 +162,20 @@
   .pl-tabla th,.pl-tabla td{padding-left:3px;padding-right:3px;}
   .pl-pos{color:var(--verde);} .pl-neg{color:var(--rojo);}
   .pl-aviso{font-size:11px;color:#8a5a00;background:#fef6e6;border-radius:10px;padding:8px 10px;margin-bottom:10px;}
+  /* Conciliación facturas ↔ banco (Facturas) */
+  .cc-bloque{border-top:0.5px solid var(--gris-borde);padding:10px 0;}
+  .cc-bloque:first-of-type{border-top:none;padding-top:0;}
+  .cc-cab{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:13px;font-weight:600;}
+  .cc-cab small{font-weight:400;color:var(--texto-muted);font-size:11px;}
+  .cc-cab::before{content:'▸';display:inline-block;width:14px;color:var(--texto-muted);}
+  .cc-bloque.abierto>.cc-cab::before{content:'▾';}
+  .cc-cuerpo{display:none;margin-top:6px;}
+  .cc-bloque.abierto>.cc-cuerpo{display:block;}
+  .cc-prov{display:flex;justify-content:space-between;padding:6px 0 6px 14px;font-size:12px;cursor:pointer;border-top:0.5px dashed var(--gris-borde);}
+  .cc-prov.abierto{font-weight:600;}
+  .cc-lin{display:none;padding:3px 0 3px 28px;font-size:11px;color:var(--texto-muted);justify-content:space-between;gap:8px;}
+  .cc-prov.abierto+.cc-lineas .cc-lin{display:flex;}
+  .cc-tag{font-size:10px;background:#fef6e6;color:#8a5a00;border-radius:6px;padding:0 5px;margin-left:4px;}
   /* Por clasificar (Facturas) */
   .pc-item{border-top:0.5px solid var(--gris-borde);padding:12px 0;display:flex;flex-direction:column;gap:8px;}
   .pc-item:first-of-type{border-top:none;padding-top:0;}
@@ -290,6 +304,7 @@
 
   <div class="tab-panel" id="panel-facturas">
     <div id="por-clasificar"></div>
+    <div id="conciliacion"></div>
     <div class="periodo-nav">
       <button class="periodo-btn" id="fac-prev">‹</button>
       <span class="periodo-label" id="fac-label">...</span>
@@ -360,7 +375,7 @@ const DIAS=['L','M','X','J','V','S','D'];
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const OBJETIVO_MARGEN=70;
 
-let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[],rawEscandalloResumen=[],rawEscandalloDetalle=[],rawCostesFijos=[],rawCostesExtra=[],rawBancoMensual=[];
+let rawDiario=[],rawProductos=[],rawFacturas=[],rawMaestro=[],rawSemanal=[],rawEscandalloResumen=[],rawEscandalloDetalle=[],rawCostesFijos=[],rawCostesExtra=[],rawBancoMensual=[],rawConciliacion=[];
 let semanas=[],opIdx=0,tvIdx=0;
 let facMes=new Date().getMonth(),facAño=new Date().getFullYear();
 let semFechasMap={};
@@ -882,8 +897,46 @@ function renderTop(sk,titulo,containerId){
   document.getElementById(containerId).innerHTML=html;
 }
 
+// ── Conciliación con el banco ────────────────────────────────────────────────
+// Pestaña "Conciliación" (banco.gs): pagos a proveedores sin factura en la Lista y facturas sin pago en el banco.
+const ccAbiertos=new Set();
+function renderConciliacion(){
+  const cont=document.getElementById('conciliacion');
+  if(!rawConciliacion.length){cont.innerHTML='';return;}
+  const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const fc=d=>{const s=String(d||'').slice(0,10);return s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(2,4);};
+  const bloque=(tipo,titulo,ayuda)=>{
+    const filas=rawConciliacion.filter(r=>r.Tipo===tipo);
+    const porProv={};
+    filas.forEach(r=>{const k=r.Proveedor||'Sin identificar: '+String(r.Detalle||'').split(' · ')[0];(porProv[k]=porProv[k]||[]).push(r);});
+    const total=filas.reduce((s,r)=>s+(parseFloat(r.Importe)||0),0);
+    const id='cc-'+tipo;
+    let h=`<div class="cc-bloque${ccAbiertos.has(id)?' abierto':''}" data-cc="${id}"><div class="cc-cab"><span>${titulo} <small>${filas.length}</small></span><span>${fmtD(total)}</span></div><div class="cc-cuerpo"><div style="font-size:11px;color:var(--texto-muted);margin-bottom:4px">${ayuda}</div>`;
+    Object.entries(porProv).sort((a,b)=>b[1].reduce((s,r)=>s+(+r.Importe||0),0)-a[1].reduce((s,r)=>s+(+r.Importe||0),0)).forEach(([p,rs])=>{
+      const pid=id+'|'+p;
+      h+=`<div class="cc-prov${ccAbiertos.has(pid)?' abierto':''}" data-cc="${esc(pid)}"><span>${esc(p)} <small style="color:var(--texto-muted)">${rs.length}</small></span><span>${fmtD(rs.reduce((s,r)=>s+(+r.Importe||0),0))}</span></div><div class="cc-lineas">`;
+      rs.sort((a,b)=>String(b.Fecha).localeCompare(String(a.Fecha))).forEach(r=>{
+        h+=`<div class="cc-lin"><span>${fc(r.Fecha)} · ${esc(r.Detalle)}${r.Estado?`<span class="cc-tag">${esc(r.Estado)}</span>`:''}</span><span>${fmtD(+r.Importe||0)}</span></div>`;
+      });
+      h+=`</div>`;
+    });
+    return h+`</div></div>`;
+  };
+  cont.innerHTML=`<div class="section"><div class="section-title">Conciliación con el banco · desde enero 2026</div>`
+    +bloque('Pago sin factura','Pagos sin factura','Pagos a proveedores del banco que no casan con ninguna factura de la Lista: falta pedir la factura (o el proveedor no está en el Maestro). "Reciente": puede llegar aún.')
+    +bloque('Factura sin pago','Facturas sin pago','Facturas de la Lista sin un pago que case en el banco: pendientes de pagar, pagadas en efectivo o con importe distinto. "Reciente": aún dentro de plazo.')
+    +`</div>`;
+}
+document.getElementById('conciliacion').addEventListener('click',e=>{
+  const el=e.target.closest('.cc-cab,.cc-prov'); if(!el) return;
+  const id=el.classList.contains('cc-cab')?el.parentElement.dataset.cc:el.dataset.cc;
+  ccAbiertos.has(id)?ccAbiertos.delete(id):ccAbiertos.add(id);
+  renderConciliacion();
+});
+
 function renderFacturas(){
   renderPorClasificar();
+  renderConciliacion();
   const maestroMap=buildMaestroMap();
   document.getElementById('fac-label').textContent=`${MESES[facMes]} ${facAño}`;
   const facsMes=rawFacturas.filter(r=>{
@@ -1204,7 +1257,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 // Paquete de datos: una sola petición (?paquete=1) con las 7 pestañas, generado cada hora en Apps Script.
 // Se guarda en el móvil para enseñar al instante los datos de la última vez mientras llegan los nuevos.
 const CACHE_KEY='granpic-paquete-v1';
-const HOJAS_APP=['LK Diario','LK Productos','Lista','Maestro Proveedores','LK Semanal','Escandallo_Resumen_API','Escandallo_Detalle_API','Costes fijos','Costes sin escandallo','Banco mensual'];
+const HOJAS_APP=['LK Diario','LK Productos','Lista','Maestro Proveedores','LK Semanal','Escandallo_Resumen_API','Escandallo_Detalle_API','Costes fijos','Costes sin escandallo','Banco mensual','Conciliación'];
 let pintado=false;
 
 function expandirTabla(t){
@@ -1278,6 +1331,7 @@ function pintarPaquete(p){
   rawCostesFijos=expandirTabla(h['Costes fijos']);
   rawCostesExtra=expandirTabla(h['Costes sin escandallo']);
   rawBancoMensual=expandirTabla(h['Banco mensual']);
+  rawConciliacion=expandirTabla(h['Conciliación']);
   const semAntes=pintado?{op:semanas[opIdx],tv:semanas[tvIdx]}:null;
 
     // Construir lista de semanas desde columnas Año/Semana (criterio Apps Script)
@@ -1720,8 +1774,12 @@ const estimadosDe=anio=>{const a=Object.keys(PL_ESTIMADOS).map(Number).sort((x,y
 // desde sep. 2026 y estimados antes. Si un mes no está, se usa PL_ESTIMADOS.
 function mapaBancoMensual(){
   const m={};
+  const num=v=>v===''||v===null||v===undefined||isNaN(parseFloat(v))?null:parseFloat(v);
   rawBancoMensual.forEach(x=>{const k=(x.Mes||'').toString().slice(0,7);const c=parseFloat(x['Comisiones bancarias']),s=parseFloat(x.Seguros);
-    if(/^\d{4}-\d{2}$/.test(k)&&!isNaN(c)&&!isNaN(s))m[k]={comisiones:c,seguros:s,fuente:x.Fuente};});
+    if(/^\d{4}-\d{2}$/.test(k)&&!isNaN(c)&&!isNaN(s))m[k]={comisiones:c,seguros:s,fuente:x.Fuente,
+      // caja (solo meses con datos del banco)
+      saldo:num(x['Saldo final']),impuestos:num(x.Impuestos),prestamo:num(x['Préstamo']),inversiones:num(x.Inversiones),
+      efectivoIngresado:num(x['Efectivo ingresado']),ventasEfectivo:num(x['Ventas en efectivo'])};});
   return m;
 }
 
@@ -1744,12 +1802,13 @@ function mapaPersonal(){
 function datosPL(desde,hasta){
   const d0=isoDia(desde),d1=isoDia(hasta);
   const r={comensales:0,comComida:0,comCena:0,ventas:0,vComida:0,vBebida:0,cComida:0,cBebida:0,alquiler:0,otros:0,personal:0,bancoVar:0,diasVentas:0,mesesSinPersonal:new Set(),
-    provComida:{},provBebida:{}};  // compras por proveedor: {clave: {nombre, importe}}
+    provComida:{},provBebida:{},  // compras por proveedor: {clave: {nombre, importe}}
+    ventasIVA:0,ivaSoportado:0};  // para el puente de caja
   const dias=new Set(),n=v=>parseFloat(v)||0,bancoMes=mapaBancoMensual();
   rawDiario.forEach(x=>{
     const f=(x.Fecha||'').toString().slice(0,10); if(f<d0||f>d1) return;
     const t=(x.Turno||'').toString().toLowerCase();
-    if(t==='total'){r.comensales+=n(x.Comensales);r.ventas+=n(x['Ventas sin IVA']);if(!bancoMes[f.slice(0,7)])r.bancoVar+=n(x['Ventas sin IVA'])*estimadosDe(+f.slice(0,4)).bancoPctVentas;r.vComida+=n(x['Comida sin IVA']);r.vBebida+=n(x['Bebida sin IVA']);dias.add(f);}
+    if(t==='total'){r.comensales+=n(x.Comensales);r.ventas+=n(x['Ventas sin IVA']);r.ventasIVA+=n(x['Ventas con IVA']);if(!bancoMes[f.slice(0,7)])r.bancoVar+=n(x['Ventas sin IVA'])*estimadosDe(+f.slice(0,4)).bancoPctVentas;r.vComida+=n(x['Comida sin IVA']);r.vBebida+=n(x['Bebida sin IVA']);dias.add(f);}
     else if(t.includes('almuerzo')) r.comComida+=n(x.Comensales);
     else if(t.includes('cena')) r.comCena+=n(x.Comensales);
   });
@@ -1759,11 +1818,29 @@ function datosPL(desde,hasta){
     const f=(x.Fecha||'').toString().slice(0,10); if(f<d0||f>d1) return;
     const base=n(x['Base Imponible (€)']||x['Base Imponible']),total=n(x['Total (€)']||x['Total']);
     const importe=base||total;  // si la factura no tiene base, al menos el total
+    r.ivaSoportado+=base?total-base:0;
     const nombre=(x.Proveedor||'').toString().trim(),clave=nombre.toLowerCase();
     const c=cats[clave]||'otros';
     if(c==='comida'||c==='bebida'){
       const p=c==='comida'?r.provComida:r.provBebida;
       (p[clave]=p[clave]||{nombre,importe:0}).importe+=importe;
+    }
+    if(c==='comida') r.cComida+=importe; else if(c==='bebida') r.cBebida+=importe; else if(c==='alquiler') r.alquiler+=importe; else r.otros+=importe;
+  });
+  // Pagos del banco sin factura (pestaña "Conciliación"): cuentan como gasto en la fecha del pago, sin IVA
+  // (10% comida y bebida, 21% el resto). Al llegar la factura el pago casa y sale de la lista: no se duplica.
+  r.sinFactura=0;
+  rawConciliacion.forEach(x=>{
+    if(x.Tipo!=='Pago sin factura') return;
+    const f=(x.Fecha||'').toString().slice(0,10); if(f<d0||f>d1) return;
+    const nombre=(x.Proveedor||'').toString().trim(),clave=nombre.toLowerCase();
+    const c=cats[clave]||'otros',importe=n(x.Importe)/(c==='comida'||c==='bebida'?1.10:1.21);
+    r.sinFactura+=importe; r.ivaSoportado+=n(x.Importe)-importe;
+    if(!nombre){r.sinIdentificar=(r.sinIdentificar||0)+importe;return;}  // sin proveedor: línea propia en Otros
+    if(c==='comida'||c==='bebida'){
+      const p=c==='comida'?r.provComida:r.provBebida;
+      (p[clave]=p[clave]||{nombre,importe:0}).importe+=importe;
+      (p[clave].sinFactura=(p[clave].sinFactura||0)+importe);
     }
     if(c==='comida') r.cComida+=importe; else if(c==='bebida') r.cBebida+=importe; else if(c==='alquiler') r.alquiler+=importe; else r.otros+=importe;
   });
@@ -1805,7 +1882,8 @@ function datosPL(desde,hasta){
   r.margen=r.ventas-r.coste; r.mComida=r.vComida-r.cComida; r.mBebida=r.vBebida-r.cBebida;
   // Diferencia entre el margen de comida que dicen los escandallos y el real, llevada a euros de ventas de comida
   r.fugaComida=r.vCubiertas&&r.vComida?(r.mTeorico/r.vCubiertas-r.mComida/r.vComida)*r.vComida:0;
-  r.fijos=r.personal+r.alquiler+r.otros+r.banco+r.seguros;
+  r.sinIdentificar=r.sinIdentificar||0;
+  r.fijos=r.personal+r.alquiler+r.otros+r.banco+r.seguros+r.sinIdentificar;
   r.ebitda=r.margen-r.fijos;
   r.ticket=r.comensales?r.ventas/r.comensales:0;
   return r;
@@ -1820,6 +1898,22 @@ function rangoVistaPL(p,modo,corte){
   if(modo==='acum') return [new Date(p.anio,0,1),fin];
   if(modo==='ltm') return [p.tipo==='semana'||p.tipo==='p4'?masDias(fin,-363):new Date(fin.getFullYear()-1,fin.getMonth(),fin.getDate()+1),fin];
   return [ini,fin];
+}
+/** Puente de caja de un periodo de meses completos (o el mes en curso): saldo inicial del banco + EBITDA ± partidas
+ *  que no están en el EBITDA = saldo final. "Otros" es la diferencia que queda (desfases de pago, nóminas…). */
+function puenteCaja(R,ini,fin){
+  if(plCal!=='cont'||ini.getDate()!==1) return null;
+  const bm=mapaBancoMensual(),mes=x=>isoDia(x).slice(0,7);
+  const prev=mes(new Date(ini.getFullYear(),ini.getMonth()-1,1)),mFin=mes(fin);
+  if(!bm[prev]||bm[prev].saldo===null||!bm[mFin]||bm[mFin].saldo===null) return null;
+  let imp=0,pres=0,inv=0,efI=0,efV=0;
+  for(let m=mes(ini);m<=mFin;m=mes(new Date(+m.slice(0,4),+m.slice(5),1))){
+    const x=bm[m]; if(!x||x.impuestos===null) return null;
+    imp+=x.impuestos;pres+=x.prestamo;inv+=x.inversiones;efI+=x.efectivoIngresado;efV+=x.ventasEfectivo;
+  }
+  const s0=bm[prev].saldo,s1=bm[mFin].saldo,iva=(R.ventasIVA-R.ventas)-R.ivaSoportado,efe=-(efV-efI);
+  const conocido=R.ebitda+iva-imp-pres-inv+efe;
+  return {s0,s1,ebitda:R.ebitda,iva,imp:-imp,pres:-pres,inv:-inv,efe,otros:(s1-s0)-conocido};
 }
 function renderPL(){
   const seg=(attr,opts,act)=>`<div class="pl-seg">${Object.entries(opts).map(([k,t])=>`<button data-${attr}="${k}" class="${k===act?'on':''}">${t}</button>`).join('')}</div>`;
@@ -1866,11 +1960,11 @@ function renderPL(){
   const vacia='<tr><td colspan="5" style="border:0;padding:4px"></td></tr>';
   // Los gastos se muestran en negativo (entre paréntesis); sus filas llevan gasto:true para que las diferencias
   // se calculen sobre el importe del gasto
-  const g=x=>-x, otrosT=x=>x.otros+x.banco+x.seguros, G={gasto:true};
+  const g=x=>-x, otrosT=x=>x.otros+x.banco+x.seguros+x.sinIdentificar, G={gasto:true};
   const Gx=o=>Object.assign({gasto:true},o);
   // Detalle de compras por proveedor (los dos años), de mayor a menor gasto
   const proveedores=(pa,pb,grupo)=>Object.keys(Object.assign({},pa,pb))
-    .map(k=>({k,nombre:(pa[k]||pb[k]).nombre,a:pa[k]?pa[k].importe:0,b:pb[k]?pb[k].importe:0}))
+    .map(k=>({k,nombre:(pa[k]||pb[k]).nombre+((pa[k]&&pa[k].sinFactura)||(pb[k]&&pb[k].sinFactura)?' *':''),a:pa[k]?pa[k].importe:0,b:pb[k]?pb[k].importe:0}))
     .filter(p=>Math.round(p.a)||Math.round(p.b))
     .sort((x,y)=>Math.max(y.a,y.b)-Math.max(x.a,x.b))
     .map(p=>L(p.nombre,g(p.a),g(p.b),Gx({grupo,padre:'compras'}))).join('');
@@ -1891,10 +1985,28 @@ function renderPL(){
   html+=L('Personal',g(A.personal),g(B.personal),G)+P('% sobre ventas',g(A.personal),g(B.personal),A.ventas,B.ventas,G)
        +L('Alquiler',g(A.alquiler),g(B.alquiler),G)+P('% sobre ventas',g(A.alquiler),g(B.alquiler),A.ventas,B.ventas,G);
   html+=L('Otros',g(otrosT(A)),g(otrosT(B)),Gx({abre:'otros'}))
-       +L('Servicios (facturas)',g(A.otros),g(B.otros),Gx({grupo:'otros'}))+L('Comisiones bancarias',g(A.banco),g(B.banco),Gx({grupo:'otros'}))+L('Seguros',g(A.seguros),g(B.seguros),Gx({grupo:'otros'}))
+       +L('Servicios',g(A.otros),g(B.otros),Gx({grupo:'otros'}))+L('Comisiones bancarias',g(A.banco),g(B.banco),Gx({grupo:'otros'}))+L('Seguros',g(A.seguros),g(B.seguros),Gx({grupo:'otros'}))
+       +(A.sinIdentificar||B.sinIdentificar?L('Pagos sin identificar (banco)',g(A.sinIdentificar),g(B.sinIdentificar),Gx({grupo:'otros'})):'')
        +P('% sobre ventas',g(otrosT(A)),g(otrosT(B)),A.ventas,B.ventas,G);
   html+=L('<b>EBITDA</b>',A.ebitda,B.ebitda,{cls:'pl-tot pl-linea'})+P('% sobre ventas',A.ebitda,B.ebitda,A.ventas,B.ventas);
-  html+=`</tbody></table></div>`;
+  // Puente de caja: del saldo del banco al inicio al saldo al final (solo calendario contable y meses con datos del banco)
+  const cA=puenteCaja(A,d,h),cB=puenteCaja(B,da,ha);
+  if(cA||cB){
+    const C=(t,k,o={})=>{const a=cA?cA[k]:null,b=cB?cB[k]:null;
+      return `<tr ${attrs(o)}><td>${t}</td><td class="ant">${b===null?'':v0(b)}</td><td>${a===null?'':v0(a)}</td><td></td><td>${a!==null&&b!==null?dEur(a,b):''}</td></tr>`;};
+    html+=vacia+C('<b>Caja en el banco al inicio</b>','s0',{cls:'pl-tot'})
+      +C('EBITDA','ebitda')
+      +C('IVA cobrado neto (ventas − compras)','iva')
+      +C('Impuestos pagados (IVA, sociedades)','imp')
+      +C('Préstamo (recibido − cuotas)','pres')
+      +C('Inversiones','inv')
+      +C('Ventas en efectivo no ingresadas en el banco','efe')
+      +C('Otros (pagos y cobros de otros periodos, nóminas, SS, IRPF…)','otros')
+      +C('<b>Caja en el banco al final</b>','s1',{cls:'pl-tot pl-linea'});
+  }
+  html+=`</tbody></table>`;
+  if(A.sinFactura||B.sinFactura) html+=`<div style="font-size:11px;color:var(--texto-muted);margin-top:8px">Incluye pagos del banco sin factura (sin IVA estimado): ${n0(A.sinFactura)} € en ${plPeriodo.anio}${B.sinFactura?` y ${n0(B.sinFactura)} € en ${pa.anio}`:''}. Los proveedores con * tienen alguno. Detalle en Facturas › Conciliación.</div>`;
+  html+=`</div>`;
 
   document.getElementById('pl-contenido').innerHTML=html;
 }
