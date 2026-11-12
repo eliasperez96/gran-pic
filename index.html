@@ -162,6 +162,20 @@
   .pl-tabla th,.pl-tabla td{padding-left:3px;padding-right:3px;}
   .pl-pos{color:var(--verde);} .pl-neg{color:var(--rojo);}
   .pl-aviso{font-size:11px;color:#8a5a00;background:#fef6e6;border-radius:10px;padding:8px 10px;margin-bottom:10px;}
+  /* Banco (movimientos con saldo) */
+  .bc-resumen{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .bc-caja{background:var(--gris-fondo);border-radius:12px;padding:10px 12px;}
+  .bc-caja span{display:block;font-size:11px;color:var(--texto-muted);}
+  .bc-caja b{font-size:16px;}
+  .bc-tabla{width:100%;border-collapse:collapse;font-size:12px;}
+  .bc-tabla td{padding:7px 3px;border-top:0.5px solid var(--gris-borde);vertical-align:top;}
+  .bc-tabla td.r{text-align:right;white-space:nowrap;}
+  .bc-tabla .bc-f{font-size:11px;color:var(--texto-muted);white-space:nowrap;}
+  .bc-tabla .bc-c{font-weight:500;}
+  .bc-tabla .bc-c small{display:block;font-weight:400;color:var(--texto-muted);font-size:10.5px;}
+  .bc-tabla .bc-mas{color:var(--verde);}
+  .bc-tabla .bc-s{color:var(--texto-muted);}
+  .bc-tabla tr.bc-dia td{background:#f6f6f4;font-size:11px;font-weight:600;color:var(--texto-muted);padding:4px 3px;}
   /* Conciliación facturas ↔ banco (Facturas) */
   .cc-bloque{border-top:0.5px solid var(--gris-borde);padding:10px 0;}
   .cc-bloque:first-of-type{border-top:none;padding-top:0;}
@@ -232,6 +246,7 @@
     <button class="main-tab" data-tab="op-semanal">Op. Semanal</button>
     <button class="main-tab" data-tab="margen">Margen</button>
     <button class="main-tab" data-tab="pl">P&amp;L</button>
+    <button class="main-tab" data-tab="banco">Banco</button>
     <button class="main-tab" data-tab="menu">Ing. menú</button>
     <button class="main-tab" data-tab="topventas">Top ventas</button>
     <button class="main-tab" data-tab="facturas">Facturas</button>
@@ -285,6 +300,17 @@
     </div>
     <div class="pc-meta" id="pl-rango" style="text-align:center;margin:-4px 0 8px"></div>
     <div id="pl-contenido"></div>
+  </div>
+
+  <div class="tab-panel" id="panel-banco">
+    <div class="pl-tipos" id="bc-tipos"></div>
+    <div class="periodo-nav">
+      <button class="periodo-btn" id="bc-prev">‹</button>
+      <span class="periodo-label" id="bc-label">...</span>
+      <button class="periodo-btn" id="bc-next">›</button>
+    </div>
+    <div class="pc-meta" id="bc-rango" style="text-align:center;margin:-4px 0 8px"></div>
+    <div id="bc-contenido"></div>
   </div>
 
   <div class="tab-panel" id="panel-margen">
@@ -1396,6 +1422,7 @@ document.querySelectorAll('.main-tab').forEach(b=>{
     document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('on'));
     document.getElementById('panel-'+b.dataset.tab).classList.add('on');
     if(b.dataset.tab==='visor') abrirVisor();
+    if(b.dataset.tab==='banco') renderBanco();
     document.getElementById('seccion-actual').textContent=b.textContent;
     abrirMenu(false);
     window.scrollTo(0,0);
@@ -2027,6 +2054,78 @@ document.getElementById('pl-contenido').addEventListener('click',e=>{
   const g=tr.dataset.abre; plAbiertos.has(g)?plAbiertos.delete(g):plAbiertos.add(g);
   renderPL();
 });
+// ── Banco: movimientos con saldo, como un extracto ──────────────────────────
+// Se piden a Apps Script por POST con el PIN de la app (no están en el Sheet de la app). Mismo selector que el P&L.
+let bcCal='cont',bcTipo='mes',bcModo='periodo',bcPeriodo=null;
+const bcCache={};
+function renderBanco(){
+  const seg=(attr,opts,act)=>`<div class="pl-seg">${Object.entries(opts).map(([k,t])=>`<button data-${attr}="${k}" class="${k===act?'on':''}">${t}</button>`).join('')}</div>`;
+  document.getElementById('bc-tipos').innerHTML=seg('cal',PL_CALENDARIOS,bcCal)
+    +`<div class="pl-tipos">${Object.entries(PL_TAMANOS[bcCal]).map(([k,t])=>`<button class="pl-tipo${k===bcTipo?' on':''}" data-tipo="${k}">${t}</button>`).join('')}</div>`
+    +(bcTipo==='anio'?'':seg('modo',Object.assign({},PL_MODOS,{ltm:bcCal==='op'?'Últ. 52 semanas':'Últ. 12 meses'}),bcModo));
+  const hoy=new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
+  if(!bcPeriodo) bcPeriodo=periodoDe(bcTipo,hoy);
+  const modo=bcTipo==='anio'?'periodo':bcModo;
+  const [pi,pf]=rangoPeriodo(bcPeriodo),enCurso=pf>hoy;
+  const [d,h]=rangoVistaPL(bcPeriodo,modo,enCurso?hoy:null);
+  const fd=x=>`${x.getDate()} ${MESES_CORTOS[x.getMonth()]}`,fc=x=>`${fd(x)} ${String(x.getFullYear()).slice(2)}`;
+  const nombre={semana:`S${bcPeriodo.n}`,p4:`P${bcPeriodo.n}`,mes:PL_MESES[bcPeriodo.n-1],trimestre:`T${bcPeriodo.n}`,semestre:`${bcPeriodo.n}º semestre`,anio:'Año'}[bcTipo];
+  document.getElementById('bc-label').textContent=(modo==='acum'?`Acumulado a ${nombre}`:modo==='ltm'?`${bcCal==='op'?'52 semanas':'12 meses'} a ${nombre}`:nombre)+` ${bcPeriodo.anio}`;
+  document.getElementById('bc-rango').textContent=`${fc(d)} – ${fc(h)}`+(enCurso?' · hasta hoy':'');
+  const cont=document.getElementById('bc-contenido'),clave=isoDia(d)+'|'+isoDia(h);
+  if(bcCache[clave]) return dibujarBanco(bcCache[clave],d);
+  if(!leerPin()){
+    cont.innerHTML=`<div class="section"><div class="pc-fila"><input id="bc-pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN de la app"><button class="pc-btn" id="bc-ver">Ver movimientos</button></div><div class="pc-msg" id="bc-msg">Los movimientos del banco solo se ven con el PIN.</div></div>`;
+    return;
+  }
+  cont.innerHTML='<div class="loading">Cargando movimientos…</div>';
+  pedirBanco(leerPin(),isoDia(d),isoDia(h)).then(r=>{bcCache[clave]=r;dibujarBanco(r,d);})
+    .catch(err=>{cont.innerHTML=`<div class="pl-aviso">No se han podido cargar los movimientos: ${escHtml(err.message)}</div>`;if(/PIN/.test(err.message)){guardarPin('');renderBanco();}});
+}
+async function pedirBanco(pin,desde,hasta){
+  const r=await fetch(API,{method:'POST',body:JSON.stringify({pin,accion:'movimientosBanco',desde,hasta})}).then(x=>x.json());
+  if(r.error) throw new Error(r.error);
+  return r;
+}
+function dibujarBanco(r,d){
+  const cont=document.getElementById('bc-contenido');
+  const n2=x=>(x<0?'-':'')+Math.abs(x).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  const fdd=s=>`${s.slice(8,10)}/${s.slice(5,7)}/${s.slice(2,4)}`;
+  const mov=r.movimientos||[];
+  const ent=mov.reduce((s,m)=>s+(m[3]>0?m[3]:0),0),sal=mov.reduce((s,m)=>s+(m[3]<0?m[3]:0),0);
+  let html=`<div class="bc-resumen">
+    <div class="bc-caja"><span>Saldo inicial</span><b>${n2(r.saldoInicial)} €</b></div>
+    <div class="bc-caja"><span>Saldo final</span><b>${n2(r.saldoFinal)} €</b></div>
+    <div class="bc-caja"><span>Entradas</span><b class="bc-mas">+${n2(ent)} €</b></div>
+    <div class="bc-caja"><span>Salidas</span><b>${n2(sal)} €</b></div></div>`;
+  if(r.primeraFecha&&isoDia(d)<r.primeraFecha) html+=`<div class="pl-aviso">Hay movimientos del banco desde el ${fdd(r.primeraFecha)}: antes de esa fecha no se ven.</div>`;
+  html+=`<div class="section"><div class="section-title">${mov.length} movimientos · actualizado ${fdd(r.actualizado||'')}</div><table class="bc-tabla"><tbody>`;
+  if(!mov.length) html+=`<tr><td style="text-align:center;color:var(--texto-light);padding:20px">Sin movimientos en este periodo</td></tr>`;
+  mov.forEach(m=>{
+    html+=`<tr><td class="bc-f">${fdd(m[0])}</td><td class="bc-c">${escHtml(m[1])}${m[2]?`<small>${escHtml(m[2])}</small>`:''}</td><td class="r${m[3]>0?' bc-mas':''}">${m[3]>0?'+':''}${n2(m[3])}</td><td class="r bc-s">${n2(m[4])}</td></tr>`;
+  });
+  cont.innerHTML=html+`</tbody></table></div>`;
+}
+document.getElementById('bc-tipos').addEventListener('click',e=>{
+  const b=e.target.closest('[data-tipo],[data-cal],[data-modo]'); if(!b) return;
+  const ref=bcPeriodo?rangoPeriodo(bcPeriodo)[1]:new Date();
+  if(b.dataset.cal){bcCal=b.dataset.cal;if(!PL_TAMANOS[bcCal][bcTipo])bcTipo=Object.keys(PL_TAMANOS[bcCal])[0];}
+  if(b.dataset.tipo) bcTipo=b.dataset.tipo;
+  if(b.dataset.modo) bcModo=b.dataset.modo;
+  const hoy=new Date();
+  bcPeriodo=periodoDe(bcTipo,ref>hoy?hoy:ref);
+  renderBanco();
+});
+document.getElementById('bc-contenido').addEventListener('click',async e=>{
+  if(e.target.id!=='bc-ver') return;
+  const pin=(document.getElementById('bc-pin').value||'').trim(),msg=document.getElementById('bc-msg');
+  if(!pin){msg.className='pc-msg err';msg.textContent='Escribe el PIN.';return;}
+  msg.className='pc-msg';msg.textContent='Comprobando…';
+  try{await pedirBanco(pin,'2000-01-01','2000-01-01');guardarPin(pin);renderBanco();}
+  catch(err){msg.className='pc-msg err';msg.textContent=err.message;}
+});
+document.getElementById('bc-prev').addEventListener('click',()=>{bcPeriodo=moverPeriodo(bcPeriodo,-1);renderBanco();});
+document.getElementById('bc-next').addEventListener('click',()=>{bcPeriodo=moverPeriodo(bcPeriodo,1);renderBanco();});
 document.getElementById('pl-prev').addEventListener('click',()=>{plPeriodo=moverPeriodo(plPeriodo,-1);renderPL();});
 document.getElementById('pl-next').addEventListener('click',()=>{plPeriodo=moverPeriodo(plPeriodo,1);renderPL();});
 // ── Por clasificar ───────────────────────────────────────────────────────────
